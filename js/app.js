@@ -151,26 +151,62 @@ class GTISOPAssistant {
         const settingsPanel = document.getElementById('settingsPanel');
         const closeSettings = document.getElementById('closeSettings');
         
-        settingsBtn?.addEventListener('click', (e) => {
-            console.log('Settings button clicked');
-            e.preventDefault();
-            e.stopPropagation();
-            if (settingsPanel) {
-                settingsPanel.classList.remove('translate-x-full');
-                console.log('Settings panel should be visible now');
-            } else {
-                console.error('Settings panel not found');
-            }
-        });
+        console.log('Setting up event listeners...');
+        console.log('Settings button found:', !!settingsBtn);
+        console.log('Settings panel found:', !!settingsPanel);
+        console.log('Close button found:', !!closeSettings);
         
-        closeSettings?.addEventListener('click', () => {
-            settingsPanel.classList.add('translate-x-full');
-        });
+        if (settingsBtn && settingsPanel) {
+            // Add multiple event listeners to ensure it works
+            settingsBtn.addEventListener('click', (e) => {
+                console.log('🔧 Settings button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const currentTransform = settingsPanel.style.transform;
+                const isHidden = settingsPanel.classList.contains('translate-x-full');
+                
+                console.log('Panel currently hidden:', isHidden);
+                console.log('Current transform:', currentTransform);
+                
+                if (isHidden) {
+                    settingsPanel.classList.remove('translate-x-full');
+                    settingsPanel.style.transform = 'translateX(0)';
+                    console.log('✅ Opening settings panel');
+                } else {
+                    settingsPanel.classList.add('translate-x-full');
+                    settingsPanel.style.transform = 'translateX(100%)';
+                    console.log('❌ Closing settings panel');
+                }
+            });
+            
+            // Also try mousedown as backup
+            settingsBtn.addEventListener('mousedown', (e) => {
+                console.log('Settings button mousedown event');
+            });
+            
+            // Close settings
+            if (closeSettings) {
+                closeSettings.addEventListener('click', (e) => {
+                    console.log('Close settings clicked');
+                    e.preventDefault();
+                    settingsPanel.classList.add('translate-x-full');
+                    settingsPanel.style.transform = 'translateX(100%)';
+                });
+            }
+        } else {
+            console.error('❌ Settings button or panel not found during setup');
+        }
         
         // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
-            if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+            if (settingsPanel && settingsBtn && 
+                !settingsPanel.contains(e.target) && 
+                !settingsBtn.contains(e.target) &&
+                !settingsPanel.classList.contains('translate-x-full')) {
+                console.log('Clicking outside settings - closing panel');
                 settingsPanel.classList.add('translate-x-full');
+                settingsPanel.style.transform = 'translateX(100%)';
             }
         });
         
