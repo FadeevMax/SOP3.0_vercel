@@ -295,15 +295,15 @@
 
         /* Settings panel */
         .settings-panel {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 400px;
-            height: 100vh;
-            background: #1f2937;
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            width: 400px !important;
+            height: 100vh !important;
+            background: #1f2937 !important;
             border-left: 1px solid #374151;
-            z-index: 2000;
-            transform: translateX(100%);
+            z-index: 2000 !important;
+            transform: translateX(100%) !important;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
             box-shadow: -10px 0 25px rgba(0, 0, 0, 0.5);
@@ -315,11 +315,14 @@
 
         .translate-x-full {
             transform: translateX(100%) !important;
+            right: 0 !important;
         }
 
         /* Settings panel visible state */
         .settings-panel.visible {
             transform: translateX(0) !important;
+            right: 0 !important;
+            position: fixed !important;
         }
 
         .settings-header {
