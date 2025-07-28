@@ -32,5 +32,8 @@
     "url": "https://github.com/FadeevMax/SOP3.0_vercel.git"
   },
   "homepage": "https://github.com/FadeevMax/SOP3.0_vercel#readme",
-  "dependencies": {}
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "google-auth-library": "^9.4.0"
+  }
 }

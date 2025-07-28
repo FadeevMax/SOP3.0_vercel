@@ -99,6 +99,14 @@ class SettingsManager {
             this.handleLoadGlobalData();
         });
         
+        // Google Docs configuration
+        document.getElementById('googleDocsId')?.addEventListener('input', (e) => {
+            const docId = this.app.googleDocsSync.getDocumentIdFromUrl(e.target.value) || e.target.value;
+            this.app.googleDocsSync.setDocumentId(docId);
+            this.settings.googleDocs.docId = docId;
+            this.saveSettings();
+        });
+        
         // GitHub integration
         document.getElementById('githubRepo')?.addEventListener('input', (e) => {
             this.settings.github.repo = e.target.value;

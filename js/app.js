@@ -67,6 +67,9 @@ class GTISOPAssistant {
         // Initialize GitHub integration
         this.githubIntegration = new GitHubIntegration(this);
         
+        // Initialize Google Docs sync
+        this.googleDocsSync = new GoogleDocsSync();
+        
         // Load global data first, then fallback to local data
         await this.loadGlobalData();
     }
@@ -170,24 +173,32 @@ class GTISOPAssistant {
         try {
             console.log('Attempting Google Docs sync...');
             
-            const globalData = await this.globalConfig.syncFromGoogleDocs();
+            // Use the real Google Docs sync
+            const result = await this.googleDocsSync.syncFromGoogleDocs();
             
-            if (globalData && globalData.chunks && globalData.chunks.length > 0) {
-                await this.vectorDatabase.loadFromStorage(globalData.chunks, null);
+            if (result && result.success && result.chunks && result.chunks.length > 0) {
+                // Load the synced data into vector database
+                await this.vectorDatabase.loadFromStorage(result.chunks, null);
                 this.state.documentsLoaded = true;
                 this.state.vectorDbReady = true;
                 
                 // Save globally if we have GitHub token
                 const githubToken = this.state.globalSettings?.apiKeys?.githubToken;
                 if (githubToken) {
-                    await this.globalConfig.saveGlobalData(globalData.chunks, globalData.metadata, githubToken);
+                    await this.globalConfig.saveGlobalData(result.chunks, result.metadata, githubToken);
                 }
                 
                 this.updateUI();
-                this.showSuccess('Document synced from Google Docs and ready for chat!');
+                this.showSuccess(`Document "${result.document.name}" synced from Google Docs and ready for chat!`);
+                
+                return result;
+            } else {
+                throw new Error('No data received from Google Docs sync');
             }
         } catch (error) {
-            console.warn('Google Docs sync failed:', error);
+            console.error('Google Docs sync failed:', error);
+            this.showError(`Google Docs sync failed: ${error.message}`);
+            throw error;
         }
     }
     
