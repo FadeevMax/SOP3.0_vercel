@@ -680,3 +680,8 @@ document.addEventListener('DOMContentLoaded', () => {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = GTISOPAssistant;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.GTISOPAssistant = GTISOPAssistant;
+}

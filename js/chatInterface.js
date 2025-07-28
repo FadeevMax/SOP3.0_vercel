@@ -15,9 +15,19 @@ class ChatInterface {
     setupEventListeners() {
         const chatInput = document.getElementById('chatInput');
         const sendBtn = document.getElementById('sendBtn');
+        const chatForm = document.getElementById('chatForm');
+        
+        // Handle form submission
+        chatForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.sendMessage();
+        });
         
         // Send message on button click
-        sendBtn?.addEventListener('click', () => this.sendMessage());
+        sendBtn?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.sendMessage();
+        });
         
         // Send message on Enter key
         chatInput?.addEventListener('keypress', (e) => {
@@ -459,4 +469,9 @@ class ChatInterface {
 // Export for module use
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ChatInterface;
+}
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.ChatInterface = ChatInterface;
 }

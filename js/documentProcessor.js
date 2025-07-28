@@ -325,3 +325,8 @@ class DocumentProcessor {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = DocumentProcessor;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.DocumentProcessor = DocumentProcessor;
+}

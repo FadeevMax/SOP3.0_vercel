@@ -625,3 +625,10 @@ class VectorDatabase extends AdvancedVectorDatabase {}
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = VectorDatabase;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.VectorDatabase = VectorDatabase;
+    window.AdvancedVectorDatabase = AdvancedVectorDatabase;
+    window.ImprovedQueryIntelligence = ImprovedQueryIntelligence;
+}

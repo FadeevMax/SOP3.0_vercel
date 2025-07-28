@@ -410,3 +410,8 @@ class GlobalConfig {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = GlobalConfig;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.GlobalConfig = GlobalConfig;
+}

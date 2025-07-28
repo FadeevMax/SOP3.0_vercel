@@ -382,3 +382,8 @@ class SettingsManager {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SettingsManager;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.SettingsManager = SettingsManager;
+}

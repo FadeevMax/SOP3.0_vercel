@@ -307,3 +307,8 @@ class GoogleDocsSync {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = GoogleDocsSync;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.GoogleDocsSync = GoogleDocsSync;
+}

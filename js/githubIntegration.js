@@ -377,3 +377,8 @@ class GitHubIntegration {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = GitHubIntegration;
 }
+
+// Make available globally for browser use
+if (typeof window !== 'undefined') {
+    window.GitHubIntegration = GitHubIntegration;
+}
