@@ -100,8 +100,49 @@ class GoogleDocsSync {
                 throw new Error('Google service account credentials not configured');
             }
             
-            // Call the simple serverless function to sync from Google Docs (OpenSSL workaround)
-            const response = await fetch('/api/google-docs-simple', {
+            // Try the real Google Docs sync first, then fallback to local processing
+            let response;
+            try {
+                // Attempt the full DOCX processing from Google Docs
+                response = await fetch('/api/google-docs-sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        documentId: docId,
+                        credentials: credentials
+                    })
+                });
+                
+                if (!response.ok) {
+                    console.log('Google Docs sync failed, trying local processing...');
+                    throw new Error('Google Docs sync not available');
+                }
+                
+                const syncResult = await response.json();
+                
+                if (syncResult.success && syncResult.docx) {
+                    // Process the DOCX data with full semantic chunking
+                    response = await fetch('/api/process-docx-full', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            docxData: syncResult.docx.data,
+                            documentId: docId,
+                            documentName: syncResult.document.name
+                        })
+                    });
+                } else {
+                    throw new Error('No DOCX data received from Google Docs');
+                }
+                
+            } catch (error) {
+                console.log('Falling back to local processing:', error.message);
+                // Fallback to local processing
+                response = await fetch('/api/process-local-docx', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

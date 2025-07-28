@@ -136,6 +136,29 @@ class GTISOPAssistant {
                 this.googleDocsSync = null;
             }
             
+            // Initialize query intelligence and vector database
+            try {
+                if (typeof QueryIntelligence !== 'undefined') {
+                    this.queryIntelligence = new QueryIntelligence();
+                    console.log('✓ Query intelligence initialized');
+                } else {
+                    console.warn('QueryIntelligence class not found');
+                    this.queryIntelligence = null;
+                }
+                
+                if (typeof AdvancedVectorDatabase !== 'undefined') {
+                    this.vectorDatabase = new AdvancedVectorDatabase();
+                    console.log('✓ Advanced vector database initialized');
+                } else {
+                    console.warn('AdvancedVectorDatabase class not found');
+                    this.vectorDatabase = null;
+                }
+            } catch (error) {
+                console.warn('Failed to initialize advanced search modules:', error);
+                this.queryIntelligence = null;
+                this.vectorDatabase = null;
+            }
+            
             // Load global data first, then fallback to local data
             await this.loadGlobalData();
             console.log('✓ Global data loading completed');
@@ -407,12 +430,20 @@ class GTISOPAssistant {
                 return this.createSampleDataFallback();
             }
             
-            // Use the real Google Docs sync
+            // Use the real Google Docs sync with full processing
             const result = await this.googleDocsSync.syncFromGoogleDocs();
             
             if (result && result.success && result.chunks && result.chunks.length > 0) {
-                // Load the synced data into vector database
-                await this.vectorDatabase.loadFromStorage(result.chunks, null);
+                // Initialize advanced vector database with processed chunks
+                if (this.vectorDatabase && typeof this.vectorDatabase.initialize === 'function') {
+                    await this.vectorDatabase.initialize(result.chunks);
+                    console.log('✓ Advanced vector database initialized with chunks');
+                } else {
+                    // Fallback to simple vector database
+                    await this.vectorDatabase.loadFromStorage(result.chunks, null);
+                    console.log('✓ Simple vector database loaded');
+                }
+                
                 this.state.documentsLoaded = true;
                 this.state.vectorDbReady = true;
                 
@@ -618,11 +649,33 @@ class GTISOPAssistant {
                 throw new Error('Please configure API keys in settings');
             }
             
-            // Search vector database
-            const searchResults = await this.vectorDatabase.search(query, {
-                topK: 5,
-                includeMetadata: true
-            });
+            // Use query intelligence to enhance the search
+            let searchResults;
+            let queryAnalysis = null;
+            
+            if (this.queryIntelligence && this.vectorDatabase && typeof this.vectorDatabase.search === 'function') {
+                // Enhanced search with query intelligence
+                queryAnalysis = this.queryIntelligence.enhanceQuery(query);
+                const filters = this.queryIntelligence.generateSearchFilters(queryAnalysis);
+                
+                console.log('🧠 Query analysis:', queryAnalysis);
+                console.log('🔍 Search filters:', filters);
+                
+                searchResults = await this.vectorDatabase.search(query, filters, { maxResults: 5 });
+                
+                // Add query analysis to results for display
+                if (searchResults.results) {
+                    searchResults.queryAnalysis = queryAnalysis;
+                    searchResults.querySummary = this.queryIntelligence.generateQuerySummary(queryAnalysis);
+                }
+            } else {
+                // Fallback to simple search
+                searchResults = await this.vectorDatabase.search(query, {
+                    topK: 5,
+                    includeMetadata: true
+                });
+                console.log('📋 Using simple search (fallback)');
+            }
             
             // Generate response using LLM
             const response = await this.generateResponse(query, searchResults);
