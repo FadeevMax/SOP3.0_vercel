@@ -176,20 +176,31 @@ class GTISOPAssistant {
                 console.log('  - final isHidden:', isHidden);
                 
                 if (isHidden) {
-                    // Show panel with aggressive overrides
+                    // Show panel with ultra-aggressive overrides
                     settingsPanel.classList.remove('translate-x-full');
                     settingsPanel.classList.add('visible');
-                    settingsPanel.style.transform = 'translateX(0px)';
-                    settingsPanel.style.display = 'block';
-                    settingsPanel.style.visibility = 'visible';
-                    settingsPanel.style.opacity = '1';
-                    settingsPanel.style.right = '0px';
-                    settingsPanel.style.zIndex = '9999';
-                    settingsPanel.style.position = 'fixed';
-                    settingsPanel.style.width = '400px';
-                    settingsPanel.style.height = '100vh';
-                    settingsPanel.style.top = '0px';
-                    settingsPanel.style.background = '#1f2937';
+                    
+                    // Remove ALL transform classes first
+                    settingsPanel.className = settingsPanel.className.replace(/translate-x-\w+/g, '');
+                    settingsPanel.classList.add('visible');
+                    
+                    // Aggressive inline styles that override everything
+                    settingsPanel.style.cssText = `
+                        transform: translateX(0px) !important;
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        right: 0px !important;
+                        z-index: 9999 !important;
+                        position: fixed !important;
+                        width: 400px !important;
+                        height: 100vh !important;
+                        top: 0px !important;
+                        background: #1f2937 !important;
+                        border-left: 1px solid #374151 !important;
+                        box-shadow: -10px 0 25px rgba(0, 0, 0, 0.5) !important;
+                        overflow-y: auto !important;
+                    `;
                     
                     // Remove test content if it exists
                     const testContent = settingsPanel.querySelector('.test-content');
@@ -227,38 +238,46 @@ class GTISOPAssistant {
         }
 
         // Debug method - add to window for testing
-        window.testSettingsPanel = () => {
-            if (settingsPanel) {
-                console.log('🔍 Testing settings panel visibility...');
-                console.log('Panel initial rect:', settingsPanel.getBoundingClientRect());
-                settingsPanel.style.transform = 'translateX(0px)';
-                settingsPanel.style.display = 'block';
-                settingsPanel.style.visibility = 'visible';
-                settingsPanel.style.opacity = '1';
-                settingsPanel.style.zIndex = '9999';
-                settingsPanel.style.position = 'fixed';
-                settingsPanel.style.top = '0px';
-                settingsPanel.style.right = '0px';
-                settingsPanel.style.width = '400px';
-                settingsPanel.style.height = '100vh';
-                settingsPanel.style.background = '#1f2937'; // Normal panel color
-                settingsPanel.classList.remove('translate-x-full');
-                settingsPanel.classList.add('visible');
-                console.log('Panel should now be visible with style overrides');
-                console.log('Panel final rect:', settingsPanel.getBoundingClientRect());
-                console.log('Panel computed style:', window.getComputedStyle(settingsPanel));
+        window.forceSettingsPanel = () => {
+            const panel = document.getElementById('settingsPanel');
+            if (panel) {
+                console.log('🔍 FORCE OPENING settings panel...');
+                console.log('Panel initial rect:', panel.getBoundingClientRect());
                 
-                // Also add some content to make sure it's not empty
-                if (!settingsPanel.querySelector('.test-content')) {
-                    const testDiv = document.createElement('div');
-                    testDiv.className = 'test-content';
-                    testDiv.innerHTML = '<h1 style="color: white; padding: 20px;">TEST PANEL VISIBLE</h1>';
-                    settingsPanel.appendChild(testDiv);
-                }
+                // Nuclear option - completely override everything
+                panel.style.cssText = `
+                    transform: translateX(0px) !important;
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    right: 0px !important;
+                    z-index: 99999 !important;
+                    position: fixed !important;
+                    width: 400px !important;
+                    height: 100vh !important;
+                    top: 0px !important;
+                    background: red !important;
+                    border: 5px solid yellow !important;
+                    box-shadow: -10px 0 25px rgba(0, 0, 0, 0.5) !important;
+                    overflow-y: auto !important;
+                `;
                 
-                return settingsPanel.getBoundingClientRect();
+                // Remove all classes and add only visible
+                panel.className = 'settings-panel visible';
+                
+                console.log('Panel after force:', panel.getBoundingClientRect());
+                console.log('Panel computed style:', window.getComputedStyle(panel));
+                
+                // Add visible test content
+                panel.innerHTML = '<div style="color: white; padding: 20px; background: blue;"><h1>FORCE TEST - PANEL IS VISIBLE</h1><p>If you see this, the panel is working!</p></div>' + panel.innerHTML;
+                
+                return panel.getBoundingClientRect();
+            } else {
+                console.error('Settings panel not found!');
             }
         };
+        
+        window.testSettingsPanel = window.forceSettingsPanel;
 
         // Auto-test disabled - panel working normally now
         // setTimeout(() => {
