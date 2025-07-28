@@ -172,7 +172,7 @@ class ChatInterface {
             // Bullet points
             .replace(/^[-*+]\\s+(.+)$/gm, '<li>$1</li>')
             // Wrap list items
-            .replace(/(<li>.*<\\/li>)/s, '<ul class="list-disc list-inside space-y-1">$1</ul>');
+            .replace(/(<li>.*<\/li>)/g, '<ul class="list-disc list-inside space-y-1">$1</ul>');
         
         // Process image references
         processed = this.processImageReferences(processed);

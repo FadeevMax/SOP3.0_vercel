@@ -168,7 +168,7 @@ class DocumentProcessor {
                         filename: "image_5.png",
                         label: "Image 5: Nevada RISE pricing structure",
                         path: "/images/image_5.png"
-                    ]
+                    }
                 ],
                 metadata: {
                     states: ["NV"],
