@@ -167,14 +167,24 @@ class GTISOPAssistant {
                 console.log('Panel currently hidden:', isHidden);
                 
                 if (isHidden) {
-                    // Show panel
+                    // Show panel with aggressive overrides
                     settingsPanel.classList.remove('translate-x-full');
                     settingsPanel.classList.add('visible');
                     settingsPanel.style.transform = 'translateX(0px)';
                     settingsPanel.style.display = 'block';
-                    console.log('✅ Opening settings panel');
+                    settingsPanel.style.visibility = 'visible';
+                    settingsPanel.style.opacity = '1';
+                    settingsPanel.style.right = '0px';
+                    settingsPanel.style.zIndex = '9999';
+                    settingsPanel.style.position = 'fixed';
+                    settingsPanel.style.width = '400px';
+                    settingsPanel.style.height = '100vh';
+                    settingsPanel.style.top = '0px';
+                    settingsPanel.style.background = '#1f2937';
+                    console.log('✅ Opening settings panel with aggressive overrides');
                     console.log('Panel classes:', settingsPanel.classList.toString());
                     console.log('Panel transform:', settingsPanel.style.transform);
+                    console.log('Panel rect:', settingsPanel.getBoundingClientRect());
                 } else {
                     // Hide panel
                     settingsPanel.classList.add('translate-x-full');
@@ -202,17 +212,42 @@ class GTISOPAssistant {
         window.testSettingsPanel = () => {
             if (settingsPanel) {
                 console.log('🔍 Testing settings panel visibility...');
+                console.log('Panel initial rect:', settingsPanel.getBoundingClientRect());
                 settingsPanel.style.transform = 'translateX(0px)';
                 settingsPanel.style.display = 'block';
                 settingsPanel.style.visibility = 'visible';
                 settingsPanel.style.opacity = '1';
                 settingsPanel.style.zIndex = '9999';
+                settingsPanel.style.position = 'fixed';
+                settingsPanel.style.top = '0px';
+                settingsPanel.style.right = '0px';
+                settingsPanel.style.width = '400px';
+                settingsPanel.style.height = '100vh';
+                settingsPanel.style.background = 'red'; // Make it obvious
                 settingsPanel.classList.remove('translate-x-full');
                 settingsPanel.classList.add('visible');
                 console.log('Panel should now be visible with style overrides');
+                console.log('Panel final rect:', settingsPanel.getBoundingClientRect());
                 console.log('Panel computed style:', window.getComputedStyle(settingsPanel));
+                
+                // Also add some content to make sure it's not empty
+                if (!settingsPanel.querySelector('.test-content')) {
+                    const testDiv = document.createElement('div');
+                    testDiv.className = 'test-content';
+                    testDiv.innerHTML = '<h1 style="color: white; padding: 20px;">TEST PANEL VISIBLE</h1>';
+                    settingsPanel.appendChild(testDiv);
+                }
+                
+                return settingsPanel.getBoundingClientRect();
             }
         };
+
+        // Auto-test after a short delay
+        setTimeout(() => {
+            console.log('🧪 Auto-testing panel visibility in 2 seconds...');
+            const result = window.testSettingsPanel();
+            console.log('Auto-test result:', result);
+        }, 2000);
         
         // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
