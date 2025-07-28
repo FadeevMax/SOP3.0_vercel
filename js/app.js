@@ -151,8 +151,16 @@ class GTISOPAssistant {
         const settingsPanel = document.getElementById('settingsPanel');
         const closeSettings = document.getElementById('closeSettings');
         
-        settingsBtn?.addEventListener('click', () => {
-            settingsPanel.classList.remove('translate-x-full');
+        settingsBtn?.addEventListener('click', (e) => {
+            console.log('Settings button clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            if (settingsPanel) {
+                settingsPanel.classList.remove('translate-x-full');
+                console.log('Settings panel should be visible now');
+            } else {
+                console.error('Settings panel not found');
+            }
         });
         
         closeSettings?.addEventListener('click', () => {

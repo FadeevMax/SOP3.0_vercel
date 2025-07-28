@@ -38,11 +38,18 @@ class ChatInterface {
         });
         
         // Handle suggested questions
-        document.querySelectorAll('.suggested-question').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const question = btn.textContent.trim();
-                chatInput.value = question;
-                this.sendMessage();
+        const questionItems = document.querySelectorAll('.question-item');
+        console.log(`Found ${questionItems.length} suggested questions`);
+        questionItems.forEach((btn, index) => {
+            console.log(`Setting up question ${index + 1}:`, btn.dataset.question || btn.textContent.trim());
+            btn.addEventListener('click', (e) => {
+                console.log('Suggested question clicked:', btn.dataset.question);
+                e.preventDefault();
+                const question = btn.dataset.question || btn.textContent.trim();
+                if (chatInput) {
+                    chatInput.value = question;
+                    this.sendMessage();
+                }
             });
         });
         
@@ -160,17 +167,17 @@ class ChatInterface {
         // Convert markdown-like formatting to HTML
         let processed = content
             // Bold text
-            .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             // Italic text
-            .replace(/\\*(.*?)\\*/g, '<em>$1</em>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
             // Code blocks
-            .replace(/```([\\s\\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
+            .replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
             // Inline code
             .replace(/`([^`]+)`/g, '<code class="bg-gray-200 px-1 py-0.5 rounded text-sm">$1</code>')
             // Line breaks
-            .replace(/\\n/g, '<br>')
+            .replace(/\n/g, '<br>')
             // Bullet points
-            .replace(/^[-*+]\\s+(.+)$/gm, '<li>$1</li>')
+            .replace(/^[-*+]\s+(.+)$/gm, '<li>$1</li>')
             // Wrap list items
             .replace(/(<li>.*<\/li>)/g, '<ul class="list-disc list-inside space-y-1">$1</ul>');
         
