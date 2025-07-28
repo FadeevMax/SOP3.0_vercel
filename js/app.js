@@ -160,6 +160,9 @@ class GTISOPAssistant {
             // Simplified and more reliable click handler
             settingsBtn.addEventListener('click', (e) => {
                 console.log('🔧 Settings button clicked!');
+                // Visual feedback to confirm click is registered
+                document.title = 'CLICK DETECTED - ' + new Date().toLocaleTimeString();
+                alert('Settings button clicked! Check console for details.');
                 e.preventDefault();
                 e.stopPropagation();
                 
