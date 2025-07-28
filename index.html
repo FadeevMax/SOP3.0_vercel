@@ -302,17 +302,24 @@
             height: 100vh;
             background: #1f2937;
             border-left: 1px solid #374151;
-            z-index: 1000;
+            z-index: 2000;
             transform: translateX(100%);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
+            box-shadow: -10px 0 25px rgba(0, 0, 0, 0.5);
         }
 
         .settings-panel.open {
-            transform: translateX(0);
+            transform: translateX(0) !important;
         }
+
         .translate-x-full {
             transform: translateX(100%) !important;
+        }
+
+        /* Settings panel visible state */
+        .settings-panel.visible {
+            transform: translateX(0) !important;
         }
 
         .settings-header {
@@ -629,7 +636,7 @@
             
             .settings-panel {
                 width: 100%;
-                right: -100%;
+                /* Don't override positioning on mobile */
             }
             
             .message-content {

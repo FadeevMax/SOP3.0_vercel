@@ -157,32 +157,31 @@ class GTISOPAssistant {
         console.log('Close button found:', !!closeSettings);
         
         if (settingsBtn && settingsPanel) {
-            // Add multiple event listeners to ensure it works
+            // Simplified and more reliable click handler
             settingsBtn.addEventListener('click', (e) => {
                 console.log('🔧 Settings button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
                 
-                const currentTransform = settingsPanel.style.transform;
                 const isHidden = settingsPanel.classList.contains('translate-x-full');
-                
                 console.log('Panel currently hidden:', isHidden);
-                console.log('Current transform:', currentTransform);
                 
                 if (isHidden) {
+                    // Show panel
                     settingsPanel.classList.remove('translate-x-full');
-                    settingsPanel.style.transform = 'translateX(0)';
+                    settingsPanel.classList.add('visible');
+                    settingsPanel.style.transform = 'translateX(0px)';
+                    settingsPanel.style.display = 'block';
                     console.log('✅ Opening settings panel');
+                    console.log('Panel classes:', settingsPanel.classList.toString());
+                    console.log('Panel transform:', settingsPanel.style.transform);
                 } else {
+                    // Hide panel
                     settingsPanel.classList.add('translate-x-full');
+                    settingsPanel.classList.remove('visible');
                     settingsPanel.style.transform = 'translateX(100%)';
                     console.log('❌ Closing settings panel');
                 }
-            });
-            
-            // Also try mousedown as backup
-            settingsBtn.addEventListener('mousedown', (e) => {
-                console.log('Settings button mousedown event');
             });
             
             // Close settings
@@ -191,12 +190,29 @@ class GTISOPAssistant {
                     console.log('Close settings clicked');
                     e.preventDefault();
                     settingsPanel.classList.add('translate-x-full');
+                    settingsPanel.classList.remove('visible');
                     settingsPanel.style.transform = 'translateX(100%)';
                 });
             }
         } else {
             console.error('❌ Settings button or panel not found during setup');
         }
+
+        // Debug method - add to window for testing
+        window.testSettingsPanel = () => {
+            if (settingsPanel) {
+                console.log('🔍 Testing settings panel visibility...');
+                settingsPanel.style.transform = 'translateX(0px)';
+                settingsPanel.style.display = 'block';
+                settingsPanel.style.visibility = 'visible';
+                settingsPanel.style.opacity = '1';
+                settingsPanel.style.zIndex = '9999';
+                settingsPanel.classList.remove('translate-x-full');
+                settingsPanel.classList.add('visible');
+                console.log('Panel should now be visible with style overrides');
+                console.log('Panel computed style:', window.getComputedStyle(settingsPanel));
+            }
+        };
         
         // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
@@ -206,6 +222,7 @@ class GTISOPAssistant {
                 !settingsPanel.classList.contains('translate-x-full')) {
                 console.log('Clicking outside settings - closing panel');
                 settingsPanel.classList.add('translate-x-full');
+                settingsPanel.classList.remove('visible');
                 settingsPanel.style.transform = 'translateX(100%)';
             }
         });
