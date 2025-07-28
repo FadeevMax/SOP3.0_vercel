@@ -1,6 +1,8 @@
 // Vercel serverless function to sync from Google Docs
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -42,6 +44,20 @@ export default async function handler(req, res) {
                 if (!serviceAccountKey.private_key || !serviceAccountKey.client_email) {
                     throw new Error('Invalid service account: missing private_key or client_email');
                 }
+                
+                // Try to fix private key format issues
+                if (serviceAccountKey.private_key) {
+                    // Ensure proper line endings and format
+                    serviceAccountKey.private_key = serviceAccountKey.private_key
+                        .replace(/\\n/g, '\n')  // Convert escaped newlines to actual newlines
+                        .replace(/\r\n/g, '\n') // Normalize line endings
+                        .trim();
+                    
+                    // Ensure it starts and ends properly
+                    if (!serviceAccountKey.private_key.startsWith('-----BEGIN PRIVATE KEY-----')) {
+                        console.warn('Private key format may be incorrect');
+                    }
+                }
             } catch (parseError) {
                 console.error('Failed to parse service account:', parseError.message);
                 return res.status(400).json({ 
@@ -55,16 +71,35 @@ export default async function handler(req, res) {
         
         console.log('Initializing Google Auth...');
         
-        // Initialize Google Auth with service account
-        const auth = new GoogleAuth({
-            credentials: serviceAccountKey,
-            scopes: [
-                'https://www.googleapis.com/auth/documents.readonly',
-                'https://www.googleapis.com/auth/drive.readonly'
-            ]
-        });
-        
-        const authClient = await auth.getClient();
+        // Try alternative auth method first
+        let authClient;
+        try {
+            // Method 1: Direct JWT client (may avoid OpenSSL issues)
+            const { JWT } = require('google-auth-library');
+            authClient = new JWT({
+                email: serviceAccountKey.client_email,
+                key: serviceAccountKey.private_key,
+                scopes: [
+                    'https://www.googleapis.com/auth/documents.readonly',
+                    'https://www.googleapis.com/auth/drive.readonly'
+                ]
+            });
+            console.log('Using direct JWT auth method');
+        } catch (jwtError) {
+            console.log('JWT auth failed, trying GoogleAuth...', jwtError.message);
+            
+            // Method 2: Standard GoogleAuth
+            const auth = new GoogleAuth({
+                credentials: serviceAccountKey,
+                scopes: [
+                    'https://www.googleapis.com/auth/documents.readonly',
+                    'https://www.googleapis.com/auth/drive.readonly'
+                ]
+            });
+            
+            authClient = await auth.getClient();
+            console.log('Using GoogleAuth method');
+        }
         const docs = google.docs({ version: 'v1', auth: authClient });
         const drive = google.drive({ version: 'v3', auth: authClient });
         
