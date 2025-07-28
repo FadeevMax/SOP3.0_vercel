@@ -100,15 +100,15 @@ class GoogleDocsSync {
                 throw new Error('Google service account credentials not configured');
             }
             
-            // Step 1: Try to download DOCX directly from Google Docs (bypasses OpenSSL auth issues)
+            // Step 1: Try authenticated download first, then fallback to direct download
             if (showProgress) {
-                console.log('📥 Step 1: Downloading DOCX from Google Docs...');
+                console.log('📥 Step 1: Downloading DOCX from Google Docs (authenticated)...');
             }
             
             let response;
             try {
-                // First, try the simple direct download approach
-                response = await fetch('/api/download-gdocs-docx', {
+                // First, try the authenticated download (like Python code)
+                response = await fetch('/api/download-gdocs-authenticated', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -118,6 +118,22 @@ class GoogleDocsSync {
                         documentName: this.documentName
                     })
                 });
+                
+                if (!response.ok) {
+                    console.log('🔄 Authenticated download failed, trying direct download...');
+                    
+                    // Fallback to direct download
+                    response = await fetch('/api/download-gdocs-docx', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            documentId: docId,
+                            documentName: this.documentName
+                        })
+                    });
+                }
                 
                 if (!response.ok) {
                     throw new Error(`DOCX download failed: ${response.status}`);

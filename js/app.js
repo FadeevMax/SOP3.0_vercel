@@ -124,15 +124,24 @@ class GTISOPAssistant {
             
             // Initialize Google Docs sync with error checking
             try {
-                if (typeof GoogleDocsSync === 'undefined') {
-                    console.warn('GoogleDocsSync class not found - using fallback');
-                    this.googleDocsSync = null;
-                } else {
+                console.log('🔍 Checking GoogleDocsSync availability...');
+                console.log('GoogleDocsSync type:', typeof GoogleDocsSync);
+                console.log('window.GoogleDocsSync:', typeof window.GoogleDocsSync);
+                
+                if (typeof GoogleDocsSync !== 'undefined') {
                     this.googleDocsSync = new GoogleDocsSync();
-                    console.log('✓ Google Docs sync initialized');
+                    console.log('✓ Google Docs sync initialized with GoogleDocsSync');
+                    console.log('GoogleDocsSync methods:', Object.getOwnPropertyNames(GoogleDocsSync.prototype));
+                } else if (typeof window.GoogleDocsSync !== 'undefined') {
+                    this.googleDocsSync = new window.GoogleDocsSync();
+                    console.log('✓ Google Docs sync initialized with window.GoogleDocsSync');
+                } else {
+                    console.warn('❌ GoogleDocsSync class not found - using fallback');
+                    this.googleDocsSync = null;
                 }
             } catch (error) {
-                console.warn('Failed to initialize Google Docs sync:', error);
+                console.error('❌ Failed to initialize Google Docs sync:', error);
+                console.error('Error stack:', error.stack);
                 this.googleDocsSync = null;
             }
             
