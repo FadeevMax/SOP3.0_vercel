@@ -1,0 +1,36 @@
+{
+  "name": "gti-sop-assistant",
+  "version": "1.0.0",
+  "description": "GTI Standard Operating Procedures Assistant - Modern web application with AI-powered document search and chat interface",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'No build step required for static site'",
+    "deploy": "vercel --prod",
+    "test": "echo 'No tests configured yet'"
+  },
+  "keywords": [
+    "sop",
+    "assistant",
+    "ai",
+    "chatbot",
+    "document-search",
+    "vector-database",
+    "openai",
+    "gemini"
+  ],
+  "author": "GTI Team",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FadeevMax/SOP3.0_vercel.git"
+  },
+  "homepage": "https://github.com/FadeevMax/SOP3.0_vercel#readme",
+  "dependencies": {}
+}

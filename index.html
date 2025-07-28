@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTI SOP Assistant</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.js" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e3c72',
+                        secondary: '#2a5298',
+                        accent: '#4f46e5'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <!-- Settings Panel -->
+    <div id="settingsPanel" class="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Settings</h2>
+                <button id="closeSettings" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- API Keys Section -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">API Keys</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">OpenAI API Key</label>
+                        <input type="password" id="openaiKey" placeholder="sk-..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Gemini API Key</label>
+                        <input type="password" id="geminiKey" placeholder="AI..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">AI Model</h3>
+                <select id="modelSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <option value="gemini-2.0">Gemini 2.0 Flash</option>
+                    <option value="gpt-4-mini">GPT-4 Mini</option>
+                    <option value="gpt-4">GPT-4</option>
+                </select>
+            </div>
+
+            <!-- Temperature -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">Temperature</h3>
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-600">0</span>
+                    <input type="range" id="temperatureSlider" min="0" max="1" step="0.1" value="0.1" 
+                           class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <span class="text-sm text-gray-600">1</span>
+                </div>
+                <div class="text-center mt-2">
+                    <span id="temperatureValue" class="text-sm font-medium text-primary">0.1</span>
+                </div>
+            </div>
+
+            <!-- Document Management -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">Document Management</h3>
+                <div class="space-y-3">
+                    <button id="uploadDocBtn" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center space-x-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span>Upload DOCX</span>
+                    </button>
+                    <input type="file" id="docxUpload" accept=".docx" class="hidden">
+                    
+                    <button id="syncGoogleDoc" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
+                        <i data-lucide="cloud-download" class="w-4 h-4"></i>
+                        <span>Sync from Google Docs</span>
+                    </button>
+                    
+                    <button id="loadGlobalData" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Reload Global Data</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Display Options -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">Display Options</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3">
+                        <input type="checkbox" id="showSuggestedQuestions" checked 
+                               class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <span class="text-sm text-gray-700">Show suggested questions</span>
+                    </label>
+                    <label class="flex items-center space-x-3">
+                        <input type="checkbox" id="showChunkRelevance" checked 
+                               class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <span class="text-sm text-gray-700">Show chunks & relevance scores</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Document Info -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">Document Status</h3>
+                <div id="documentStatus" class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Chunks:</span>
+                        <span id="chunkCount" class="font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Images:</span>
+                        <span id="imageCount" class="font-medium">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Last updated:</span>
+                        <span id="lastUpdated" class="font-medium">Never</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GitHub Integration -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">GitHub Integration</h3>
+                <div class="space-y-3">
+                    <input type="text" id="githubRepo" placeholder="username/repository" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    <input type="password" id="githubToken" placeholder="GitHub Personal Access Token" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4">
+                🚀 GTI SOP Assistant
+            </h1>
+            <p class="text-lg text-gray-600 mb-6">AI-powered Standard Operating Procedures Assistant</p>
+            
+            <!-- Settings Button -->
+            <button id="settingsBtn" class="absolute top-8 right-8 p-3 bg-white shadow-lg rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <i data-lucide="settings" class="w-6 h-6 text-gray-700"></i>
+            </button>
+        </header>
+
+        <!-- Chat Interface -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="h-96 overflow-y-auto p-6 space-y-4">
+                <!-- Welcome Message -->
+                <div class="flex items-start space-x-3 opacity-0 animate-fade-in">
+                    <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
+                        <i data-lucide="bot" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-gray-50 rounded-2xl px-4 py-3 max-w-md">
+                            <p class="text-gray-800">Welcome! I'm your GTI SOP Assistant. Ask me anything about Standard Operating Procedures.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suggested Questions (conditionally shown) -->
+            <div id="suggestedQuestions" class="border-t border-gray-100 p-4">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">💡 Try asking:</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+                        What are the order limits for Ohio?
+                    </button>
+                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+                        How do RISE orders differ from regular orders?
+                    </button>
+                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+                        What states require separate battery invoices?
+                    </button>
+                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
+                        Show me the order form examples
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="border-t border-gray-100 p-4">
+                <div class="flex space-x-3">
+                    <input type="text" id="chatInput" 
+                           placeholder="Ask about GTI procedures, order limits, state-specific rules..." 
+                           class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none">
+                    <button id="sendBtn" class="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search History -->
+        <div id="searchHistory" class="mt-8 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 hidden">
+            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <i data-lucide="history" class="w-5 h-5"></i>
+                <span>Search History</span>
+            </h2>
+            <div id="historyList" class="space-y-2">
+                <!-- History items will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center h-full">
+            <div class="bg-white rounded-2xl p-8 text-center">
+                <div class="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p class="text-gray-700 font-medium">Processing your request...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/globalConfig.js"></script>
+    <script src="js/documentProcessor.js"></script>
+    <script src="js/vectorDatabase.js"></script>
+    <script src="js/chatInterface.js"></script>
+    <script src="js/settingsManager.js"></script>
+    <script src="js/githubIntegration.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
