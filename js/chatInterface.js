@@ -171,19 +171,67 @@ class ChatInterface {
     }
     
     processImageReferences(content) {
-        // Pattern for image references: [IMAGE: filename - label]
-        const imagePattern = /\\[IMAGE:\\s*([^\\]]+?)\\s*-\\s*([^\\]]+?)\\]/g;
+        // Pattern for image references: [IMAGE: filename - label] - matching Python implementation
+        const imagePattern = /\[IMAGE:\s*([^\]]+?)\s*-\s*([^\]]+?)\]/g;
         
         return content.replace(imagePattern, (match, filename, label) => {
-            // For demo purposes, we'll show a placeholder
-            // In production, this would display the actual image
+            // Create image display matching Python Streamlit implementation
+            const imageId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
             return `
-                <div class="image-container bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-4 my-3 text-center">
-                    <div class="w-16 h-16 mx-auto mb-2 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <i data-lucide="image" class="w-8 h-8 text-gray-400"></i>
+                <div class="image-container" style="
+                    border: 2px solid #374151;
+                    border-radius: 12px;
+                    padding: 16px;
+                    margin: 16px 0;
+                    text-align: center;
+                    background: #1f2937;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                ">
+                    <div class="image-wrapper" style="position: relative; margin-bottom: 12px;">
+                        <img 
+                            id="${imageId}" 
+                            src="/images/${this.escapeHtml(filename)}" 
+                            alt="${this.escapeHtml(label)}"
+                            style="
+                                max-width: 100%;
+                                height: auto;
+                                border-radius: 8px;
+                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                                display: none;
+                            "
+                            onload="this.style.display='block'; this.nextElementSibling.style.display='none';"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        />
+                        <div class="image-placeholder" style="
+                            width: 100%;
+                            height: 200px;
+                            background: linear-gradient(135deg, #374151, #4b5563);
+                            border-radius: 8px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 48px;
+                            color: #9ca3af;
+                        ">
+                            🖼️
+                        </div>
                     </div>
-                    <p class="text-sm font-medium text-gray-700">${this.escapeHtml(label)}</p>
-                    <p class="text-xs text-gray-500">${this.escapeHtml(filename)}</p>
+                    <div class="image-caption" style="
+                        font-size: 14px;
+                        color: #d1d5db;
+                        font-weight: 500;
+                        margin-bottom: 4px;
+                    ">
+                        ${this.escapeHtml(label)}
+                    </div>
+                    <div class="image-filename" style="
+                        font-size: 12px;
+                        color: #9ca3af;
+                        font-style: italic;
+                    ">
+                        ${this.escapeHtml(filename)}
+                    </div>
                 </div>
             `;
         });
