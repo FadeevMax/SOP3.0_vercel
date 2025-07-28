@@ -163,8 +163,17 @@ class GTISOPAssistant {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                const isHidden = settingsPanel.classList.contains('translate-x-full');
-                console.log('Panel currently hidden:', isHidden);
+                // Check multiple conditions to determine if panel is hidden
+                const hasHiddenClass = settingsPanel.classList.contains('translate-x-full');
+                const hasVisibleClass = settingsPanel.classList.contains('visible');
+                const transform = settingsPanel.style.transform;
+                const isHidden = hasHiddenClass || transform === 'translateX(100%)' || !hasVisibleClass;
+                
+                console.log('Panel state check:');
+                console.log('  - hasHiddenClass:', hasHiddenClass);
+                console.log('  - hasVisibleClass:', hasVisibleClass);
+                console.log('  - transform:', transform);
+                console.log('  - final isHidden:', isHidden);
                 
                 if (isHidden) {
                     // Show panel with aggressive overrides
@@ -181,15 +190,22 @@ class GTISOPAssistant {
                     settingsPanel.style.height = '100vh';
                     settingsPanel.style.top = '0px';
                     settingsPanel.style.background = '#1f2937';
+                    
+                    // Remove test content if it exists
+                    const testContent = settingsPanel.querySelector('.test-content');
+                    if (testContent) {
+                        testContent.remove();
+                    }
                     console.log('✅ Opening settings panel with aggressive overrides');
                     console.log('Panel classes:', settingsPanel.classList.toString());
                     console.log('Panel transform:', settingsPanel.style.transform);
                     console.log('Panel rect:', settingsPanel.getBoundingClientRect());
                 } else {
-                    // Hide panel
+                    // Hide panel completely
                     settingsPanel.classList.add('translate-x-full');
                     settingsPanel.classList.remove('visible');
                     settingsPanel.style.transform = 'translateX(100%)';
+                    settingsPanel.style.display = 'none';
                     console.log('❌ Closing settings panel');
                 }
             });
@@ -199,9 +215,11 @@ class GTISOPAssistant {
                 closeSettings.addEventListener('click', (e) => {
                     console.log('Close settings clicked');
                     e.preventDefault();
+                    e.stopPropagation();
                     settingsPanel.classList.add('translate-x-full');
                     settingsPanel.classList.remove('visible');
                     settingsPanel.style.transform = 'translateX(100%)';
+                    settingsPanel.style.display = 'none';
                 });
             }
         } else {
@@ -223,7 +241,7 @@ class GTISOPAssistant {
                 settingsPanel.style.right = '0px';
                 settingsPanel.style.width = '400px';
                 settingsPanel.style.height = '100vh';
-                settingsPanel.style.background = 'red'; // Make it obvious
+                settingsPanel.style.background = '#1f2937'; // Normal panel color
                 settingsPanel.classList.remove('translate-x-full');
                 settingsPanel.classList.add('visible');
                 console.log('Panel should now be visible with style overrides');
@@ -242,12 +260,12 @@ class GTISOPAssistant {
             }
         };
 
-        // Auto-test after a short delay
-        setTimeout(() => {
-            console.log('🧪 Auto-testing panel visibility in 2 seconds...');
-            const result = window.testSettingsPanel();
-            console.log('Auto-test result:', result);
-        }, 2000);
+        // Auto-test disabled - panel working normally now
+        // setTimeout(() => {
+        //     console.log('🧪 Auto-testing panel visibility in 2 seconds...');
+        //     const result = window.testSettingsPanel();
+        //     console.log('Auto-test result:', result);
+        // }, 2000);
         
         // Close settings panel when clicking outside
         document.addEventListener('click', (e) => {
@@ -259,6 +277,7 @@ class GTISOPAssistant {
                 settingsPanel.classList.add('translate-x-full');
                 settingsPanel.classList.remove('visible');
                 settingsPanel.style.transform = 'translateX(100%)';
+                settingsPanel.style.display = 'none';
             }
         });
         

@@ -91,7 +91,12 @@ class SettingsManager {
         });
         
         // Google Docs sync
-        document.getElementById('syncGoogleDoc')?.addEventListener('click', () => {
+        const syncBtn = document.getElementById('syncGoogleDoc');
+        console.log('Google Docs sync button found:', !!syncBtn);
+        syncBtn?.addEventListener('click', (e) => {
+            console.log('🔄 Google Docs sync button clicked!');
+            e.preventDefault();
+            e.stopPropagation();
             this.handleGoogleDocsSync();
         });
         
@@ -157,10 +162,22 @@ class SettingsManager {
     
     async handleGoogleDocsSync() {
         try {
+            console.log('🔄 Starting Google Docs sync process...');
             this.app.showLoading('Syncing from Google Docs...');
-            await this.app.syncFromGoogleDocs();
+            this.app.showNotification('Starting Google Docs sync...', 'info');
+            
+            const result = await this.app.syncFromGoogleDocs();
+            console.log('Google Docs sync result:', result);
+            
             this.app.hideLoading();
+            
+            if (result && result.success) {
+                this.app.showSuccess('Google Docs sync completed successfully!');
+            } else {
+                this.app.showError('Google Docs sync completed but no new data was found');
+            }
         } catch (error) {
+            console.error('Google Docs sync error:', error);
             this.app.hideLoading();
             this.app.showError(`Google Docs sync failed: ${error.message}`);
         }
