@@ -100,29 +100,37 @@ class GoogleDocsSync {
                 throw new Error('Google service account credentials not configured');
             }
             
-            // Try the real Google Docs sync first, then fallback to local processing
+            // Step 1: Try to download DOCX directly from Google Docs (bypasses OpenSSL auth issues)
+            if (showProgress) {
+                console.log('📥 Step 1: Downloading DOCX from Google Docs...');
+            }
+            
             let response;
             try {
-                // Attempt the full DOCX processing from Google Docs
-                response = await fetch('/api/google-docs-sync', {
+                // First, try the simple direct download approach
+                response = await fetch('/api/download-gdocs-docx', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         documentId: docId,
-                        credentials: credentials
+                        documentName: this.documentName
                     })
                 });
                 
                 if (!response.ok) {
-                    console.log('Google Docs sync failed, trying local processing...');
-                    throw new Error('Google Docs sync not available');
+                    throw new Error(`DOCX download failed: ${response.status}`);
                 }
                 
-                const syncResult = await response.json();
+                const downloadResult = await response.json();
                 
-                if (syncResult.success && syncResult.docx) {
+                if (showProgress) {
+                    console.log('✅ Step 1 complete: DOCX downloaded successfully');
+                    console.log('🔄 Step 2: Processing DOCX with semantic chunking...');
+                }
+                
+                if (downloadResult.success && downloadResult.docx) {
                     // Process the DOCX data with full semantic chunking
                     response = await fetch('/api/process-docx-full', {
                         method: 'POST',
@@ -130,17 +138,44 @@ class GoogleDocsSync {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            docxData: syncResult.docx.data,
+                            docxData: downloadResult.docx.data,
                             documentId: docId,
-                            documentName: syncResult.document.name
+                            documentName: downloadResult.document.name
                         })
                     });
-                } else {
-                    throw new Error('No DOCX data received from Google Docs');
+                    
+                    if (!response.ok) {
+                        throw new Error('DOCX processing failed');
+                    }
+                    
+                    const processResult = await response.json();
+                    
+                    if (showProgress) {
+                        console.log('✅ Step 2 complete: DOCX processed into semantic chunks');
+                        console.log(`📊 Generated ${processResult.chunks?.length || 0} chunks`);
+                    }
+                    
+                    // Add download URL to the result
+                    if (downloadResult.document.downloadUrl) {
+                        processResult.downloadUrl = downloadResult.document.downloadUrl;
+                    }
+                    
+                    return processResult;
+                    
+                } else if (downloadResult.success && downloadResult.chunks) {
+                    // If we got existing processed data as fallback
+                    if (showProgress) {
+                        console.log('📋 Using existing processed data (fallback)');
+                    }
+                    return downloadResult;
                 }
                 
+                throw new Error('No valid data received from download');
+                
             } catch (error) {
-                console.log('Falling back to local processing:', error.message);
+                console.log('❌ Direct download failed, trying local processing fallback...');
+                console.log('Error:', error.message);
+                
                 // Fallback to local processing
                 response = await fetch('/api/process-local-docx', {
                 method: 'POST',

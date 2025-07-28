@@ -355,6 +355,17 @@ class GTISOPAssistant {
             }
         });
         
+        // Google Docs sync button
+        const syncButton = document.getElementById('syncGoogleDoc');
+        if (syncButton) {
+            syncButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await this.handleManualSync();
+            });
+            console.log('✓ Sync button event listener added');
+        }
+        
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             // Escape to close settings
@@ -415,7 +426,68 @@ class GTISOPAssistant {
         }
     }
     
-    async syncFromGoogleDocs() {
+    async handleManualSync() {
+        const syncButton = document.getElementById('syncGoogleDoc');
+        const originalText = syncButton?.textContent || '☁️ Sync from Google Docs';
+        
+        try {
+            // Update button to show progress
+            if (syncButton) {
+                syncButton.disabled = true;
+                syncButton.textContent = '🔄 Downloading DOCX...';
+            }
+            
+            this.showLoading('Syncing from Google Docs...');
+            
+            // Force a fresh sync
+            const result = await this.syncFromGoogleDocs(true);
+            
+            if (result && result.success) {
+                if (syncButton) {
+                    syncButton.textContent = '✅ Processing complete!';
+                }
+                
+                // Show download link if available
+                if (result.downloadUrl) {
+                    this.showSuccess(`
+                        Document synced successfully! 
+                        <br><a href="${result.downloadUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
+                            📥 Download DOCX file
+                        </a>
+                        <br>Generated ${result.chunks?.length || 0} chunks with ${result.metadata?.imageCount || 0} images.
+                    `);
+                } else {
+                    this.showSuccess(`Document synced successfully! Generated ${result.chunks?.length || 0} chunks.`);
+                }
+                
+                // Update UI
+                this.updateUI();
+                
+            } else {
+                throw new Error('Sync completed but no valid data received');
+            }
+            
+        } catch (error) {
+            console.error('Manual sync failed:', error);
+            this.showError(`Sync failed: ${error.message}`);
+            
+            if (syncButton) {
+                syncButton.textContent = '❌ Sync failed';
+            }
+        } finally {
+            this.hideLoading();
+            
+            // Reset button after delay
+            if (syncButton) {
+                setTimeout(() => {
+                    syncButton.disabled = false;
+                    syncButton.textContent = originalText;
+                }, 3000);
+            }
+        }
+    }
+    
+    async syncFromGoogleDocs(forceSync = false) {
         try {
             console.log('Attempting Google Docs sync...');
             
