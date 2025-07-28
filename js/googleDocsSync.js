@@ -189,10 +189,73 @@ class GoogleDocsSync {
                 throw new Error('No valid data received from download');
                 
             } catch (error) {
-                console.log('❌ Direct download failed, trying local processing fallback...');
+                console.log('❌ Both download methods failed, trying GitHub repository...');
                 console.log('Error:', error.message);
                 
-                // Fallback to local processing
+                if (showProgress) {
+                    console.log('🔄 Step 3: Trying GitHub repository download...');
+                }
+                
+                try {
+                    // Try GitHub repository download
+                    response = await fetch('/api/download-from-github', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            documentId: docId,
+                            documentName: this.documentName
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const githubResult = await response.json();
+                        
+                        if (showProgress) {
+                            console.log('✅ Step 3 complete: Downloaded from GitHub');
+                            if (githubResult.chunks) {
+                                console.log(`📊 Using pre-processed ${githubResult.chunks.length} chunks`);
+                                return githubResult;
+                            } else {
+                                console.log('🔄 Step 4: Processing GitHub DOCX...');
+                            }
+                        }
+                        
+                        // If we got processed chunks from GitHub, use them
+                        if (githubResult.success && githubResult.chunks) {
+                            return githubResult;
+                        }
+                        
+                        // If we got DOCX from GitHub, process it
+                        if (githubResult.success && githubResult.docx) {
+                            response = await fetch('/api/process-docx-full', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    docxData: githubResult.docx.data,
+                                    documentId: docId,
+                                    documentName: githubResult.document.name
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                const processResult = await response.json();
+                                if (githubResult.document.downloadUrl) {
+                                    processResult.downloadUrl = githubResult.document.downloadUrl;
+                                }
+                                return processResult;
+                            }
+                        }
+                    }
+                } catch (githubError) {
+                    console.log('❌ GitHub download also failed:', githubError.message);
+                }
+                
+                // Final fallback to local processing
+                console.log('🔄 Final fallback: Using local processed data...');
                 response = await fetch('/api/process-local-docx', {
                 method: 'POST',
                 headers: {
