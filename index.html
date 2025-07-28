@@ -289,18 +289,22 @@
         .settings-panel {
             position: fixed;
             top: 0;
-            right: -400px;
+            right: 0;
             width: 400px;
             height: 100vh;
             background: #1f2937;
             border-left: 1px solid #374151;
             z-index: 1000;
-            transition: right 0.3s ease;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
             overflow-y: auto;
         }
 
         .settings-panel.open {
-            right: 0;
+            transform: translateX(0);
+        }
+        .translate-x-full {
+            transform: translateX(100%) !important;
         }
 
         .settings-header {
@@ -577,7 +581,7 @@
     </div>
 
     <!-- Settings Panel -->
-    <div class="settings-panel" id="settingsPanel">
+    <div class="settings-panel translate-x-full" id="settingsPanel">
         <div class="settings-header">
             <h2 class="settings-title">Settings</h2>
             <button class="close-settings" id="closeSettings">
@@ -677,7 +681,25 @@
     <script>
         // Initialize app when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            window.app = new GTISOPAssistant();
+            try {
+                // Check if all required classes are available
+                const requiredClasses = ['DocumentProcessor', 'VectorDatabase', 'ChatInterface', 'SettingsManager', 'GitHubIntegration', 'GlobalConfig'];
+                const missingClasses = requiredClasses.filter(className => typeof window[className] === 'undefined');
+                
+                if (missingClasses.length > 0) {
+                    console.error('Missing classes:', missingClasses);
+                    document.getElementById('notification').textContent = `Missing classes: ${missingClasses.join(', ')}. Please refresh the page.`;
+                    document.getElementById('notification').className = 'notification error show';
+                    return;
+                }
+                
+                console.log('All classes loaded successfully');
+                window.app = new GTISOPAssistant();
+            } catch (error) {
+                console.error('App initialization error:', error);
+                document.getElementById('notification').textContent = `Initialization error: ${error.message}. Please refresh the page.`;
+                document.getElementById('notification').className = 'notification error show';
+            }
         });
     </script>
 </body>
