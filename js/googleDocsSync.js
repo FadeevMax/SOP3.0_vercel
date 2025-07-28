@@ -13,6 +13,7 @@ class GoogleDocsSync {
     setDocumentId(docId) {
         this.documentId = docId;
         localStorage.setItem('google_docs_id', docId);
+        console.log('Google Docs ID set to:', docId);
     }
     
     // Get the Google Docs document ID

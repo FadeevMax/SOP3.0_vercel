@@ -10,7 +10,7 @@ class SettingsManager {
         this.settings = app.state.globalSettings || {
             apiKeys: {
                 openai: '',
-                gemini: '',
+                gemini: '', // Will be configured via environment variables
                 githubToken: '' // Will be configured via environment variables
             },
             model: 'gemini-2.0',
