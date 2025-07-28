@@ -18,6 +18,14 @@ export default function handler(req, res) {
     try {
         // Build Google Service Account from individual env vars (cleaner approach)
         let googleServiceAccount = null;
+        
+        // Debug logging for environment variables
+        console.log('🔍 Environment variables check:');
+        console.log('GOOGLE_CLIENT_EMAIL present:', !!process.env.GOOGLE_CLIENT_EMAIL);
+        console.log('GOOGLE_PRIVATE_KEY present:', !!process.env.GOOGLE_PRIVATE_KEY);
+        console.log('GOOGLE_PROJECT_ID present:', !!process.env.GOOGLE_PROJECT_ID);
+        console.log('GOOGLE_CLIENT_EMAIL value:', process.env.GOOGLE_CLIENT_EMAIL ? process.env.GOOGLE_CLIENT_EMAIL.substring(0, 20) + '...' : 'undefined');
+        
         if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
             googleServiceAccount = {
                 type: process.env.GOOGLE_SERVICE_ACCOUNT_TYPE || 'service_account',
@@ -65,6 +73,17 @@ export default function handler(req, res) {
             app: {
                 version: '1.0.0',
                 environment: process.env.NODE_ENV || 'production'
+            },
+            debug: {
+                envVarsPresent: {
+                    GOOGLE_CLIENT_EMAIL: !!process.env.GOOGLE_CLIENT_EMAIL,
+                    GOOGLE_PRIVATE_KEY: !!process.env.GOOGLE_PRIVATE_KEY,
+                    GOOGLE_PROJECT_ID: !!process.env.GOOGLE_PROJECT_ID,
+                    GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
+                    OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+                    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY
+                },
+                serviceAccountMethod: googleServiceAccount ? 'individual_env_vars' : 'not_configured'
             }
         };
         
