@@ -444,11 +444,21 @@ class GTISOPAssistant {
             
             if (result && result.success) {
                 if (syncButton) {
-                    syncButton.textContent = '✅ Processing complete!';
+                    syncButton.textContent = result.warning ? '⚠️ Using cached data' : '✅ Processing complete!';
                 }
                 
-                // Show download link if available
-                if (result.downloadUrl) {
+                // Show appropriate message based on result type
+                if (result.warning) {
+                    // Show warning for fallback data with instructions
+                    const instructions = result.warning.instructions?.join('<br>') || '';
+                    this.showError(`
+                        <strong>${result.warning.message}</strong><br><br>
+                        <strong>To get fresh data:</strong><br>
+                        ${instructions}<br><br>
+                        <strong>Current status:</strong> Using existing ${result.chunks?.length || 0} chunks as fallback.
+                    `);
+                } else if (result.downloadUrl) {
+                    // Show success with download link for fresh data
                     this.showSuccess(`
                         Document synced successfully! 
                         <br><a href="${result.downloadUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline;">
@@ -457,6 +467,7 @@ class GTISOPAssistant {
                         <br>Generated ${result.chunks?.length || 0} chunks with ${result.metadata?.imageCount || 0} images.
                     `);
                 } else {
+                    // Generic success message
                     this.showSuccess(`Document synced successfully! Generated ${result.chunks?.length || 0} chunks.`);
                 }
                 

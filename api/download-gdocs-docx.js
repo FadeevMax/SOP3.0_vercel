@@ -41,7 +41,28 @@ export default async function handler(req, res) {
         });
         
         if (!response.ok) {
-            console.log('❌ Direct download failed, document may not be public');
+            console.log(`❌ Direct download failed: ${response.status} ${response.statusText}`);
+            
+            // Provide specific error messages and instructions
+            let errorMessage = 'Failed to download document';
+            let instructions = [];
+            
+            if (response.status === 401 || response.status === 403) {
+                errorMessage = 'Document access denied - document is not publicly accessible';
+                instructions = [
+                    '1. Open your Google Doc: https://docs.google.com/document/d/' + docId,
+                    '2. Click "Share" button in top right',
+                    '3. Click "Anyone with the link"',
+                    '4. Set permission to "Viewer"',
+                    '5. Click "Done" and try sync again'
+                ];
+            } else if (response.status === 404) {
+                errorMessage = 'Document not found';
+                instructions = [
+                    'Please check that the document ID is correct',
+                    'Current ID: ' + docId
+                ];
+            }
             
             // If direct download fails, return the existing processed data as fallback
             const fallbackPath = path.join(process.cwd(), 'semantic_chunks.json');
@@ -60,15 +81,31 @@ export default async function handler(req, res) {
                         note: 'Using existing processed data - direct download failed'
                     },
                     chunks: chunks,
+                    warning: {
+                        message: errorMessage,
+                        status: response.status,
+                        instructions: instructions
+                    },
                     metadata: {
                         source: 'existing_processed_data',
                         chunkCount: chunks.length,
-                        note: 'Document may not be publicly accessible for direct download'
+                        note: 'To get fresh data, make the Google Doc publicly accessible'
                     }
                 });
             }
             
-            throw new Error(`Failed to download document: ${response.status} ${response.statusText}`);
+            // If no fallback data, return error with instructions
+            return res.status(response.status).json({
+                error: errorMessage,
+                status: response.status,
+                instructions: instructions,
+                documentUrl: `https://docs.google.com/document/d/${docId}`,
+                suggestions: [
+                    'Make the Google Doc publicly accessible (Anyone with the link can view)',
+                    'Check that the document ID is correct',
+                    'Ensure the document exists and is not deleted'
+                ]
+            });
         }
         
         // Get the DOCX content
