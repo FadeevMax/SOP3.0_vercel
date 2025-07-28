@@ -160,9 +160,6 @@ class GTISOPAssistant {
             // Simplified and more reliable click handler
             settingsBtn.addEventListener('click', (e) => {
                 console.log('🔧 Settings button clicked!');
-                // Visual feedback to confirm click is registered
-                document.title = 'CLICK DETECTED - ' + new Date().toLocaleTimeString();
-                alert('Settings button clicked! Check console for details.');
                 e.preventDefault();
                 e.stopPropagation();
                 
@@ -187,13 +184,14 @@ class GTISOPAssistant {
                     settingsPanel.className = settingsPanel.className.replace(/translate-x-\w+/g, '');
                     settingsPanel.classList.add('visible');
                     
-                    // Aggressive inline styles that override everything
+                    // Aggressive inline styles that override everything with proper positioning
                     settingsPanel.style.cssText = `
                         transform: translateX(0px) !important;
                         display: block !important;
                         visibility: visible !important;
                         opacity: 1 !important;
                         right: 0px !important;
+                        left: auto !important;
                         z-index: 9999 !important;
                         position: fixed !important;
                         width: 400px !important;
@@ -203,6 +201,8 @@ class GTISOPAssistant {
                         border-left: 1px solid #374151 !important;
                         box-shadow: -10px 0 25px rgba(0, 0, 0, 0.5) !important;
                         overflow-y: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                     `;
                     
                     // Remove test content if it exists
@@ -247,22 +247,25 @@ class GTISOPAssistant {
                 console.log('🔍 FORCE OPENING settings panel...');
                 console.log('Panel initial rect:', panel.getBoundingClientRect());
                 
-                // Nuclear option - completely override everything
+                // Nuclear option - completely override everything with correct positioning
                 panel.style.cssText = `
                     transform: translateX(0px) !important;
                     display: block !important;
                     visibility: visible !important;
                     opacity: 1 !important;
                     right: 0px !important;
+                    left: auto !important;
                     z-index: 99999 !important;
                     position: fixed !important;
                     width: 400px !important;
                     height: 100vh !important;
                     top: 0px !important;
-                    background: red !important;
-                    border: 5px solid yellow !important;
+                    background: #1f2937 !important;
+                    border-left: 1px solid #374151 !important;
                     box-shadow: -10px 0 25px rgba(0, 0, 0, 0.5) !important;
                     overflow-y: auto !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
                 `;
                 
                 // Remove all classes and add only visible
@@ -271,8 +274,7 @@ class GTISOPAssistant {
                 console.log('Panel after force:', panel.getBoundingClientRect());
                 console.log('Panel computed style:', window.getComputedStyle(panel));
                 
-                // Add visible test content
-                panel.innerHTML = '<div style="color: white; padding: 20px; background: blue;"><h1>FORCE TEST - PANEL IS VISIBLE</h1><p>If you see this, the panel is working!</p></div>' + panel.innerHTML;
+                // Panel should now be visible at the right edge
                 
                 return panel.getBoundingClientRect();
             } else {

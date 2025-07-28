@@ -95,6 +95,7 @@ class SettingsManager {
         console.log('Google Docs sync button found:', !!syncBtn);
         syncBtn?.addEventListener('click', (e) => {
             console.log('🔄 Google Docs sync button clicked!');
+            console.log('Sync button element:', syncBtn);
             e.preventDefault();
             e.stopPropagation();
             this.handleGoogleDocsSync();
