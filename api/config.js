@@ -16,6 +16,21 @@ export default function handler(req, res) {
     }
     
     try {
+        // Parse Google Service Account JSON safely
+        let googleServiceAccount = null;
+        if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+            try {
+                // Clean up potential control characters and whitespace issues
+                const cleanedJson = process.env.GOOGLE_SERVICE_ACCOUNT
+                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+                    .trim();
+                googleServiceAccount = JSON.parse(cleanedJson);
+            } catch (parseError) {
+                console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT:', parseError.message);
+                googleServiceAccount = null;
+            }
+        }
+        
         // Return configuration with API keys for client use
         const config = {
             apiKeys: {
@@ -23,7 +38,7 @@ export default function handler(req, res) {
                 gemini: process.env.GEMINI_API_KEY || '',
                 githubToken: process.env.GITHUB_TOKEN || ''
             },
-            googleServiceAccount: process.env.GOOGLE_SERVICE_ACCOUNT ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT) : null,
+            googleServiceAccount: googleServiceAccount,
             github: {
                 repo: 'FadeevMax/SOP3.0_vercel'
             },

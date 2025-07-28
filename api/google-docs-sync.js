@@ -31,7 +31,24 @@ export default async function handler(req, res) {
         if (credentials) {
             serviceAccountKey = credentials;
         } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
-            serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+            try {
+                // Clean up potential control characters and parsing issues
+                const cleanedJson = process.env.GOOGLE_SERVICE_ACCOUNT
+                    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+                    .trim();
+                serviceAccountKey = JSON.parse(cleanedJson);
+                
+                // Validate required fields
+                if (!serviceAccountKey.private_key || !serviceAccountKey.client_email) {
+                    throw new Error('Invalid service account: missing private_key or client_email');
+                }
+            } catch (parseError) {
+                console.error('Failed to parse service account:', parseError.message);
+                return res.status(400).json({ 
+                    error: 'Invalid Google service account JSON format',
+                    details: parseError.message 
+                });
+            }
         } else {
             return res.status(400).json({ error: 'Google service account credentials not configured' });
         }
