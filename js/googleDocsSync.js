@@ -100,8 +100,8 @@ class GoogleDocsSync {
                 throw new Error('Google service account credentials not configured');
             }
             
-            // Call the serverless function to sync from Google Docs
-            const response = await fetch('/api/google-docs-sync', {
+            // Call the simple serverless function to sync from Google Docs (OpenSSL workaround)
+            const response = await fetch('/api/google-docs-simple', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
