@@ -1,8 +1,7 @@
 // Vercel serverless function to sync from Google Docs
+// Using individual env vars instead of JSON parsing to avoid format issues
 const { GoogleAuth } = require('google-auth-library');
 const { google } = require('googleapis');
-const fs = require('fs');
-const path = require('path');
 
 export default async function handler(req, res) {
     // Set CORS headers
@@ -27,41 +26,39 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Document ID is required' });
         }
         
-        // Use provided credentials or environment variables
+        // Build service account from individual environment variables (cleaner approach)
         let serviceAccountKey;
         
         if (credentials) {
             serviceAccountKey = credentials;
+        } else if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
+            // Use individual env vars to avoid JSON parsing issues
+            serviceAccountKey = {
+                type: process.env.GOOGLE_SERVICE_ACCOUNT_TYPE || 'service_account',
+                project_id: process.env.GOOGLE_PROJECT_ID,
+                private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+                private_key: process.env.GOOGLE_PRIVATE_KEY,
+                client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                client_id: process.env.GOOGLE_CLIENT_ID,
+                auth_uri: process.env.GOOGLE_AUTH_URI || 'https://accounts.google.com/o/oauth2/auth',
+                token_uri: process.env.GOOGLE_TOKEN_URI || 'https://oauth2.googleapis.com/token',
+                auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+                client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${encodeURIComponent(process.env.GOOGLE_CLIENT_EMAIL)}`,
+                universe_domain: 'googleapis.com'
+            };
+            console.log('✅ Built service account from individual env vars');
         } else if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+            // Fallback to JSON parsing
             try {
-                // Clean up potential control characters and parsing issues
                 const cleanedJson = process.env.GOOGLE_SERVICE_ACCOUNT
                     .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
                     .trim();
                 serviceAccountKey = JSON.parse(cleanedJson);
-                
-                // Validate required fields
-                if (!serviceAccountKey.private_key || !serviceAccountKey.client_email) {
-                    throw new Error('Invalid service account: missing private_key or client_email');
-                }
-                
-                // Try to fix private key format issues
-                if (serviceAccountKey.private_key) {
-                    // Ensure proper line endings and format
-                    serviceAccountKey.private_key = serviceAccountKey.private_key
-                        .replace(/\\n/g, '\n')  // Convert escaped newlines to actual newlines
-                        .replace(/\r\n/g, '\n') // Normalize line endings
-                        .trim();
-                    
-                    // Ensure it starts and ends properly
-                    if (!serviceAccountKey.private_key.startsWith('-----BEGIN PRIVATE KEY-----')) {
-                        console.warn('Private key format may be incorrect');
-                    }
-                }
+                console.log('✅ Using fallback JSON parsing');
             } catch (parseError) {
                 console.error('Failed to parse service account:', parseError.message);
                 return res.status(400).json({ 
-                    error: 'Invalid Google service account JSON format',
+                    error: 'Invalid Google service account format',
                     details: parseError.message 
                 });
             }
@@ -69,41 +66,27 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Google service account credentials not configured' });
         }
         
-        console.log('Initializing Google Auth...');
-        
-        // Try alternative auth method first
-        let authClient;
-        try {
-            // Method 1: Direct JWT client (may avoid OpenSSL issues)
-            const { JWT } = require('google-auth-library');
-            authClient = new JWT({
-                email: serviceAccountKey.client_email,
-                key: serviceAccountKey.private_key,
-                scopes: [
-                    'https://www.googleapis.com/auth/documents.readonly',
-                    'https://www.googleapis.com/auth/drive.readonly'
-                ]
-            });
-            console.log('Using direct JWT auth method');
-        } catch (jwtError) {
-            console.log('JWT auth failed, trying GoogleAuth...', jwtError.message);
-            
-            // Method 2: Standard GoogleAuth
-            const auth = new GoogleAuth({
-                credentials: serviceAccountKey,
-                scopes: [
-                    'https://www.googleapis.com/auth/documents.readonly',
-                    'https://www.googleapis.com/auth/drive.readonly'
-                ]
-            });
-            
-            authClient = await auth.getClient();
-            console.log('Using GoogleAuth method');
+        // Validate required fields
+        if (!serviceAccountKey.private_key || !serviceAccountKey.client_email) {
+            return res.status(400).json({ error: 'Invalid service account: missing private_key or client_email' });
         }
+        
+        console.log('🔄 Initializing Google Auth with individual env vars...');
+        
+        // Initialize Google Auth with service account
+        const auth = new GoogleAuth({
+            credentials: serviceAccountKey,
+            scopes: [
+                'https://www.googleapis.com/auth/documents.readonly',
+                'https://www.googleapis.com/auth/drive.readonly'
+            ]
+        });
+        
+        const authClient = await auth.getClient();
         const docs = google.docs({ version: 'v1', auth: authClient });
         const drive = google.drive({ version: 'v3', auth: authClient });
         
-        console.log('Fetching document content...');
+        console.log('📄 Fetching document content...');
         
         // First, get the document content to check if it exists and has content
         const docResponse = await docs.documents.get({
@@ -114,7 +97,7 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'Document not found or no access' });
         }
         
-        console.log('Exporting document as DOCX...');
+        console.log('📥 Exporting document as DOCX...');
         
         // Export the document as DOCX
         const exportResponse = await drive.files.export({
@@ -126,7 +109,7 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Failed to export document' });
         }
         
-        console.log('Document exported successfully');
+        console.log('✅ Document exported successfully');
         
         // Convert the response data to base64 for transmission
         const docxBuffer = Buffer.from(exportResponse.data);
@@ -154,7 +137,7 @@ export default async function handler(req, res) {
             }
         };
         
-        console.log(`Successfully exported document: ${fileInfo.data.name} (${docxBuffer.length} bytes)`);
+        console.log(`🎉 Successfully exported document: ${fileInfo.data.name} (${docxBuffer.length} bytes)`);
         
         res.status(200).json(response);
         
