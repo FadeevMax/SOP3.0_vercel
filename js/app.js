@@ -27,21 +27,40 @@ class GTISOPAssistant {
     
     async init() {
         try {
+            console.log('🚀 Starting GTI SOP Assistant initialization...');
+            
             // Initialize Lucide icons
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
+                console.log('✓ Lucide icons initialized');
             }
             
+            // Set up basic event listeners first
             this.setupEventListeners();
+            console.log('✓ Event listeners setup');
+            
+            // Initialize all modules
             await this.initializeModules();
+            console.log('✓ All modules initialized');
+            
+            // Load any saved state
             this.loadSavedState();
+            console.log('✓ Saved state loaded');
+            
+            // Update the UI to reflect current state
             this.updateUI();
+            console.log('✓ UI updated');
             
             this.isInitialized = true;
-            console.log('GTI SOP Assistant initialized successfully');
+            console.log('🎉 GTI SOP Assistant initialized successfully!');
+            
+            // Hide any error messages and show success
+            this.hideError();
+            this.showSuccess('Application loaded successfully! Ready to chat.');
+            
         } catch (error) {
-            console.error('Failed to initialize GTI SOP Assistant:', error);
-            this.showError('Failed to initialize application. Please refresh the page.');
+            console.error('❌ Failed to initialize GTI SOP Assistant:', error);
+            this.showError(`Failed to initialize application: ${error.message}. Please refresh the page.`);
         }
     }
     
@@ -629,30 +648,26 @@ class GTISOPAssistant {
         this.showNotification(message, 'error');
     }
     
-    showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 ${
-            type === 'success' ? 'bg-green-500 text-white' :
-            type === 'error' ? 'bg-red-500 text-white' :
-            'bg-blue-500 text-white'
-        }`;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        
-        // Show notification
-        setTimeout(() => {
-            notification.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Hide after 5 seconds
-        setTimeout(() => {
-            notification.classList.add('translate-x-full');
+    showNotification(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        if (notification) {
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            // Auto-hide after 4 seconds
             setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 5000);
+                notification.classList.remove('show');
+            }, 4000);
+        }
+    }
+    
+    hideError() {
+        // Hide any existing error notifications
+        const notification = document.getElementById('notification');
+        if (notification) {
+            notification.classList.remove('show');
+        }
     }
 }
 

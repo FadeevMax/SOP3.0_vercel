@@ -5,249 +5,665 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GTI SOP Assistant</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.js" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#1e3c72',
-                        secondary: '#2a5298',
-                        accent: '#4f46e5'
-                    }
-                }
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background with subtle pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            padding: 40px 0 60px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo-container {
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #22c55e, #3b82f6);
+            border-radius: 50%;
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(34, 197, 94, 0.4);
+        }
+
+        .main-title {
+            font-size: 47px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 20px rgba(255, 255, 255, 0.1);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #9ca3af;
+            margin-bottom: 40px;
+        }
+
+        /* Settings button */
+        .settings-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: #262626;
+            border: 1px solid #404040;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:hover {
+            background: #374151;
+            border-color: #6b7280;
+        }
+
+        /* Chat container */
+        .chat-container {
+            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            background: rgba(38, 38, 38, 0.5);
+            border: 1px solid #404040;
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            min-height: 400px;
+            max-height: 600px;
+        }
+
+        /* Welcome message */
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .welcome-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #ffffff;
+        }
+
+        .suggested-questions {
+            margin-top: 30px;
+        }
+
+        .suggested-questions h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #d1d5db;
+        }
+
+        .question-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .question-item {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .question-item:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        /* Message styles */
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #3b82f6;
+        }
+
+        .message.assistant .message-avatar {
+            background: #22c55e;
+        }
+
+        .message-content {
+            background: #262626;
+            border-radius: 16px;
+            padding: 16px;
+            max-width: 70%;
+            border: 1px solid #404040;
+        }
+
+        .message.user .message-content {
+            background: #1e40af;
+            border-color: #3b82f6;
+        }
+
+        /* Input area */
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #404040;
+            background: rgba(38, 38, 38, 0.8);
+        }
+
+        .input-form {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            background: #2563eb;
+        }
+
+        .send-btn:disabled {
+            background: #374151;
+            cursor: not-allowed;
+        }
+
+        /* Settings panel */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: #1f2937;
+            border-left: 1px solid #374151;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            padding: 20px;
+            border-bottom: 1px solid #374151;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .close-settings:hover {
+            background: #374151;
+            color: #ffffff;
+        }
+
+        .settings-content {
+            padding: 20px;
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-section h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: #d1d5db;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #d1d5db;
+        }
+
+        .form-input {
+            width: 100%;
+            background: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-input:read-only {
+            background: #4b5563;
+            color: #9ca3af;
+        }
+
+        .btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn:hover {
+            background: #2563eb;
+        }
+
+        .btn.success {
+            background: #22c55e;
+        }
+
+        .btn.success:hover {
+            background: #16a34a;
+        }
+
+        /* Status indicators */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-value {
+            font-weight: 500;
+            color: #22c55e;
+        }
+
+        /* Loading and notifications */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-content {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            border: 1px solid #374151;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #374151;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1500;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #22c55e;
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 32px;
+            }
+            
+            .chat-container {
+                margin: 0 10px;
+            }
+            
+            .settings-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .message-content {
+                max-width: 85%;
             }
         }
-    </script>
+    </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-    <!-- Settings Panel -->
-    <div id="settingsPanel" class="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto">
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-bold text-gray-900">Settings</h2>
-                <button id="closeSettings" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <!-- API Keys Section -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">API Keys</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">OpenAI API Key</label>
-                        <input type="password" id="openaiKey" placeholder="sk-..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Gemini API Key</label>
-                        <input type="password" id="geminiKey" placeholder="AI..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Model Selection -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">AI Model</h3>
-                <select id="modelSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <option value="gemini-2.0">Gemini 2.0 Flash</option>
-                    <option value="gpt-4-mini">GPT-4 Mini</option>
-                    <option value="gpt-4">GPT-4</option>
-                </select>
-            </div>
-
-            <!-- Temperature -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">Temperature</h3>
-                <div class="flex items-center space-x-3">
-                    <span class="text-sm text-gray-600">0</span>
-                    <input type="range" id="temperatureSlider" min="0" max="1" step="0.1" value="0.1" 
-                           class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                    <span class="text-sm text-gray-600">1</span>
-                </div>
-                <div class="text-center mt-2">
-                    <span id="temperatureValue" class="text-sm font-medium text-primary">0.1</span>
-                </div>
-            </div>
-
-            <!-- Document Management -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">Document Management</h3>
-                <div class="space-y-3">
-                    <button id="uploadDocBtn" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center space-x-2">
-                        <i data-lucide="upload" class="w-4 h-4"></i>
-                        <span>Upload DOCX</span>
-                    </button>
-                    <input type="file" id="docxUpload" accept=".docx" class="hidden">
-                    
-                    <button id="syncGoogleDoc" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
-                        <i data-lucide="cloud-download" class="w-4 h-4"></i>
-                        <span>Sync from Google Docs</span>
-                    </button>
-                    
-                    <button id="loadGlobalData" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        <span>Reload Global Data</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Display Options -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">Display Options</h3>
-                <div class="space-y-3">
-                    <label class="flex items-center space-x-3">
-                        <input type="checkbox" id="showSuggestedQuestions" checked 
-                               class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <span class="text-sm text-gray-700">Show suggested questions</span>
-                    </label>
-                    <label class="flex items-center space-x-3">
-                        <input type="checkbox" id="showChunkRelevance" checked 
-                               class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded">
-                        <span class="text-sm text-gray-700">Show chunks & relevance scores</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Document Info -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">Document Status</h3>
-                <div id="documentStatus" class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Chunks:</span>
-                        <span id="chunkCount" class="font-medium">0</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Images:</span>
-                        <span id="imageCount" class="font-medium">0</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Last updated:</span>
-                        <span id="lastUpdated" class="font-medium">Never</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Google Docs Configuration -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">Google Docs Configuration</h3>
-                <div class="space-y-3">
-                    <input type="text" id="googleDocsId" value="GTI Data Base and SOP" readonly
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
-                    <div class="text-sm text-gray-600">
-                        <p>✅ Pre-configured for GTI SOP document</p>
-                        <p class="text-xs mt-1">Document ID: 1BXxlyLsOL6hsVWLXB84p35yRg9yr7AL9fzz4yjVQJgA</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- GitHub Integration -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-3 text-gray-800">GitHub Integration</h3>
-                <div class="space-y-3">
-                    <input type="text" id="githubRepo" value="FadeevMax/SOP3.0_vercel" readonly
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600">
-                    <div class="text-sm text-gray-600">
-                        <p>✅ Repository configured</p>
-                        <p class="text-xs mt-1">Token configured via environment variables</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
+<body>
+    <div class="container">
         <!-- Header -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-4">
-                🚀 GTI SOP Assistant
-            </h1>
-            <p class="text-lg text-gray-600 mb-6">AI-powered Standard Operating Procedures Assistant</p>
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo">🚀</div>
+            </div>
+            <h1 class="main-title">GTI SOP Assistant</h1>
+            <p class="subtitle">AI-powered Standard Operating Procedures Assistant</p>
             
             <!-- Settings Button -->
-            <button id="settingsBtn" class="absolute top-8 right-8 p-3 bg-white shadow-lg rounded-full hover:shadow-xl transition-all duration-300 hover:scale-105">
-                <i data-lucide="settings" class="w-6 h-6 text-gray-700"></i>
+            <button class="settings-btn" id="settingsBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                </svg>
             </button>
         </header>
 
-        <!-- Chat Interface -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <!-- Chat Messages -->
-            <div id="chatMessages" class="h-96 overflow-y-auto p-6 space-y-4">
+        <!-- Main Chat Container -->
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
                 <!-- Welcome Message -->
-                <div class="flex items-start space-x-3 opacity-0 animate-fade-in">
-                    <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center">
-                        <i data-lucide="bot" class="w-4 h-4 text-white"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="bg-gray-50 rounded-2xl px-4 py-3 max-w-md">
-                            <p class="text-gray-800">Welcome! I'm your GTI SOP Assistant. Ask me anything about Standard Operating Procedures.</p>
+                <div class="welcome-message" id="welcomeMessage">
+                    <h2 class="welcome-title">Welcome! I'm your GTI SOP Assistant.</h2>
+                    <p>Ask me anything about Standard Operating Procedures.</p>
+                    
+                    <div class="suggested-questions" id="suggestedQuestions">
+                        <h3>💡 Try asking:</h3>
+                        <div class="question-list">
+                            <div class="question-item" data-question="What are the order limits for Ohio?">
+                                What are the order limits for Ohio?
+                            </div>
+                            <div class="question-item" data-question="How do RISE orders differ from regular orders?">
+                                How do RISE orders differ from regular orders?
+                            </div>
+                            <div class="question-item" data-question="What states require separate battery invoices?">
+                                What states require separate battery invoices?
+                            </div>
+                            <div class="question-item" data-question="Show me the order form examples">
+                                Show me the order form examples
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Suggested Questions (conditionally shown) -->
-            <div id="suggestedQuestions" class="border-t border-gray-100 p-4">
-                <h3 class="text-sm font-medium text-gray-700 mb-3">💡 Try asking:</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                        What are the order limits for Ohio?
+            <!-- Input Area -->
+            <div class="input-container">
+                <form class="input-form" id="chatForm">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Ask me about GTI SOPs..." 
+                        rows="1"
+                    ></textarea>
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
                     </button>
-                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                        How do RISE orders differ from regular orders?
-                    </button>
-                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                        What states require separate battery invoices?
-                    </button>
-                    <button class="suggested-question text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                        Show me the order form examples
-                    </button>
-                </div>
-            </div>
-
-            <!-- Chat Input -->
-            <div class="border-t border-gray-100 p-4">
-                <div class="flex space-x-3">
-                    <input type="text" id="chatInput" 
-                           placeholder="Ask about GTI procedures, order limits, state-specific rules..." 
-                           class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none">
-                    <button id="sendBtn" class="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i data-lucide="send" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Search History -->
-        <div id="searchHistory" class="mt-8 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 hidden">
-            <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                <i data-lucide="history" class="w-5 h-5"></i>
-                <span>Search History</span>
-            </h2>
-            <div id="historyList" class="space-y-2">
-                <!-- History items will be populated here -->
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Loading Spinner -->
-    <div id="loadingSpinner" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
-        <div class="flex items-center justify-center h-full">
-            <div class="bg-white rounded-2xl p-8 text-center">
-                <div class="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p class="text-gray-700 font-medium">Processing your request...</p>
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h2 class="settings-title">Settings</h2>
+            <button class="close-settings" id="closeSettings">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="settings-content">
+            <!-- API Keys -->
+            <div class="settings-section">
+                <h3>API Keys</h3>
+                <div class="form-group">
+                    <label class="form-label">OpenAI API Key</label>
+                    <input type="password" class="form-input" id="openaiKey" placeholder="sk-...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Gemini API Key</label>
+                    <input type="password" class="form-input" id="geminiKey" placeholder="AI...">
+                </div>
+            </div>
+
+            <!-- Document Management -->
+            <div class="settings-section">
+                <h3>Document Management</h3>
+                <button class="btn" id="uploadDocBtn">📄 Upload DOCX</button>
+                <input type="file" id="docxUpload" accept=".docx" class="hidden">
+                
+                <button class="btn success" id="syncGoogleDoc">☁️ Sync from Google Docs</button>
+                <button class="btn" id="loadGlobalData">🔄 Reload Global Data</button>
+            </div>
+
+            <!-- Document Status -->
+            <div class="settings-section">
+                <h3>Document Status</h3>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span>Chunks:</span>
+                        <span class="status-value" id="chunkCount">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Images:</span>
+                        <span class="status-value" id="imageCount">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Last updated:</span>
+                        <span class="status-value" id="lastUpdated">Never</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Status:</span>
+                        <span class="status-value" id="systemStatus">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="settings-section">
+                <h3>Configuration</h3>
+                <div class="form-group">
+                    <label class="form-label">Google Docs</label>
+                    <input type="text" class="form-input" id="googleDocsId" 
+                           value="GTI Data Base and SOP" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">GitHub Repository</label>
+                    <input type="text" class="form-input" id="githubRepo" 
+                           value="FadeevMax/SOP3.0_vercel" readonly>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">Processing your request...</p>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification hidden" id="notification"></div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.js"></script>
     <script src="js/config.js"></script>
     <script src="js/googleDocsSync.js"></script>
     <script src="js/globalConfig.js"></script>
@@ -257,5 +673,12 @@
     <script src="js/settingsManager.js"></script>
     <script src="js/githubIntegration.js"></script>
     <script src="js/app.js"></script>
+
+    <script>
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new GTISOPAssistant();
+        });
+    </script>
 </body>
 </html>
