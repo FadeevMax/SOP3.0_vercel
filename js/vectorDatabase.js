@@ -1,371 +1,513 @@
 /**
- * Vector Database - Handles vector search and similarity matching
- * Ported from the Python advanced_vector_db.py functionality
+ * Advanced Vector Database - JavaScript implementation matching advanced_vector_db.py
+ * Implements multiple indexing strategies for optimal performance with cheap LLM models
  */
 
-class VectorDatabase {
+class AdvancedVectorDatabase {
     constructor(app) {
         this.app = app;
+        
+        // Multiple indices for different search strategies - matching Python implementation
+        this.semanticIndex = null;     // Main semantic search
+        this.metadataIndex = null;     // Metadata-based search
+        this.keywordIndex = null;      // TF-IDF keyword search
+        this.imageIndex = null;        // Image-specific search
+        
+        // Data storage
         this.chunks = [];
-        this.embeddings = [];
-        this.metadata = [];
+        this.metadataStore = {};
+        
+        // Caches for performance
+        this.embeddingCache = new Map();
+        this.searchCache = new Map();
+        
+        // Configuration
         this.isReady = false;
         
-        // Initialize TF-IDF for keyword search as fallback
-        this.keywordSearch = new KeywordSearch();
+        // Query intelligence - matching Python ImprovedQueryIntelligence
+        this.queryIntelligence = new ImprovedQueryIntelligence();
     }
     
-    async buildFromChunks(chunks) {
-        try {
-            console.log('Building vector database from chunks:', chunks.length);
-            
-            this.chunks = chunks;
-            this.metadata = chunks.map(chunk => chunk.metadata);
-            
-            // Generate embeddings for each chunk
-            // Since we can't use sentence-transformers in browser, we'll use a simpler approach
-            this.embeddings = await this.generateSimpleEmbeddings(chunks);
-            
-            // Build keyword search index
-            this.keywordSearch.buildIndex(chunks);
-            
-            this.isReady = true;
-            console.log('Vector database built successfully');
-            
-            return true;
-        } catch (error) {
-            console.error('Failed to build vector database:', error);
-            throw error;
-        }
-    }
-    
-    async generateSimpleEmbeddings(chunks) {
-        // Simple TF-IDF based embeddings as fallback
-        // In production, you'd use a proper embedding service or model
+    async buildFromChunks(chunks, outputDir = "vector_db") {
+        console.log("Building advanced vector database...");
         
+        // Store chunks
+        this.chunks = chunks;
+        
+        // 1. Build semantic embeddings with context enhancement
+        console.log("Creating semantic embeddings...");
+        const semanticEmbeddings = await this.createEnhancedEmbeddings(chunks);
+        
+        // 2. Build metadata embeddings
+        console.log("Creating metadata embeddings...");
+        const metadataEmbeddings = this.createMetadataEmbeddings(chunks);
+        
+        // 3. Build keyword index
+        console.log("Creating keyword index...");
+        const keywordFeatures = this.createKeywordFeatures(chunks);
+        
+        // 4. Build specialized indices
+        console.log("Building specialized indices...");
+        this.buildSemanticIndex(semanticEmbeddings);
+        this.buildMetadataIndex(metadataEmbeddings);
+        this.buildKeywordIndex(keywordFeatures);
+        this.buildImageIndex(chunks);
+        
+        // 5. Create metadata store
+        this.createMetadataStore(chunks);
+        
+        this.isReady = true;
+        console.log(`✅ Advanced vector database built with ${chunks.length} chunks`);
+        
+        // Print statistics - matching Python
+        this.printBuildStatistics(chunks, semanticEmbeddings);
+    }
+    
+    async createEnhancedEmbeddings(chunks) {
+        // Simulate sentence transformer embeddings with enhanced context
         const embeddings = [];
-        const vocabulary = this.buildVocabulary(chunks);
         
         for (const chunk of chunks) {
-            const embedding = this.generateTFIDFVector(chunk.text, vocabulary);
+            // Create enhanced text with context - matching Python implementation
+            let enhancedText = chunk.text;
+            
+            // Add state context
+            if (chunk.metadata.states && chunk.metadata.states.length > 0) {
+                enhancedText = `State: ${chunk.metadata.states.join(', ')}. ${enhancedText}`;
+            }
+            
+            // Add section context
+            if (chunk.metadata.sections && chunk.metadata.sections.length > 0) {
+                enhancedText = `Section: ${chunk.metadata.sections.join(', ')}. ${enhancedText}`;
+            }
+            
+            // Add topic context
+            if (chunk.metadata.topics && chunk.metadata.topics.length > 0) {
+                enhancedText = `Topics: ${chunk.metadata.topics.join(', ')}. ${enhancedText}`;
+            }
+            
+            // Create simple embedding (in production, use real sentence transformers)
+            const embedding = this.createSimpleEmbedding(enhancedText);
             embeddings.push(embedding);
         }
         
         return embeddings;
     }
     
-    buildVocabulary(chunks) {
-        const wordCounts = new Map();
-        const docCount = chunks.length;
+    createSimpleEmbedding(text, dim = 384) {
+        // Simple hash-based embedding for demonstration
+        // In production, this would use sentence-transformers
+        const words = text.toLowerCase().split(/\s+/);
+        const embedding = new Array(dim).fill(0);
         
-        // Count word frequencies across all documents
-        chunks.forEach(chunk => {
-            const words = this.tokenize(chunk.text);
-            const uniqueWords = new Set(words);
-            
-            uniqueWords.forEach(word => {
-                wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
-            });
+        words.forEach((word, i) => {
+            let hash = 0;
+            for (let j = 0; j < word.length; j++) {
+                hash = ((hash << 5) - hash + word.charCodeAt(j)) & 0xffffffff;
+            }
+            const index = Math.abs(hash) % dim;
+            embedding[index] += 1 / Math.sqrt(words.length);
         });
         
-        // Filter vocabulary (remove very rare or very common words)
-        const vocabulary = [];
-        wordCounts.forEach((count, word) => {
-            const df = count / docCount;
-            if (df > 0.01 && df < 0.9 && word.length > 2) {
-                vocabulary.push(word);
+        // Normalize
+        const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+        if (norm > 0) {
+            for (let i = 0; i < embedding.length; i++) {
+                embedding[i] /= norm;
+            }
+        }
+        
+        return embedding;
+    }
+    
+    createMetadataEmbeddings(chunks) {
+        // Create embeddings based on metadata - matching Python implementation
+        const metadataEmbeddings = [];
+        
+        for (const chunk of chunks) {
+            const metadata = chunk.metadata;
+            const metadataText = [
+                ...(metadata.states || []),
+                ...(metadata.sections || []),
+                ...(metadata.topics || []),
+                metadata.has_images ? 'has_images' : 'no_images'
+            ].join(' ');
+            
+            const embedding = this.createSimpleEmbedding(metadataText, 128);
+            metadataEmbeddings.push(embedding);
+        }
+        
+        return metadataEmbeddings;
+    }
+    
+    createKeywordFeatures(chunks) {
+        // TF-IDF implementation matching Python sklearn
+        const documents = chunks.map(chunk => chunk.text.toLowerCase());
+        const vocabulary = new Map();
+        const wordCounts = [];
+        
+        // Build vocabulary
+        documents.forEach(doc => {
+            const words = this.tokenize(doc);
+            const wordCount = new Map();
+            
+            words.forEach(word => {
+                wordCount.set(word, (wordCount.get(word) || 0) + 1);
+                if (!vocabulary.has(word)) {
+                    vocabulary.set(word, vocabulary.size);
+                }
+            });
+            
+            wordCounts.push(wordCount);
+        });
+        
+        // Limit vocabulary size (matching Python max_features=1000)
+        const sortedWords = Array.from(vocabulary.entries())
+            .sort((a, b) => {
+                // Sort by document frequency
+                const freqA = documents.filter(doc => this.tokenize(doc).includes(a[0])).length;
+                const freqB = documents.filter(doc => this.tokenize(doc).includes(b[0])).length;
+                return freqB - freqA;
+            })
+            .slice(0, 1000);
+        
+        const finalVocabulary = new Map(sortedWords.map(([word], index) => [word, index]));
+        
+        // Create TF-IDF vectors
+        const tfidfVectors = [];
+        for (let docIndex = 0; docIndex < documents.length; docIndex++) {
+            const vector = new Array(finalVocabulary.size).fill(0);
+            const wordCount = wordCounts[docIndex];
+            
+            for (const [word, vocabIndex] of finalVocabulary.entries()) {
+                const tf = wordCount.get(word) || 0;
+                if (tf > 0) {
+                    const df = documents.filter(doc => this.tokenize(doc).includes(word)).length;
+                    const idf = Math.log(documents.length / df);
+                    vector[vocabIndex] = tf * idf;
+                }
+            }
+            
+            tfidfVectors.push(vector);
+        }
+        
+        return { vectors: tfidfVectors, vocabulary: finalVocabulary };
+    }
+    
+    buildSemanticIndex(embeddings) {
+        // Store embeddings for cosine similarity search
+        this.semanticIndex = embeddings;
+    }
+    
+    buildMetadataIndex(embeddings) {
+        // Store metadata embeddings
+        this.metadataIndex = embeddings;
+    }
+    
+    buildKeywordIndex(keywordFeatures) {
+        // Store TF-IDF vectors and vocabulary
+        this.keywordIndex = keywordFeatures;
+    }
+    
+    buildImageIndex(chunks) {
+        // Create index of chunks with images
+        this.imageIndex = chunks
+            .map((chunk, index) => ({ chunk, index, hasImages: chunk.metadata.has_images }))
+            .filter(item => item.hasImages);
+    }
+    
+    createMetadataStore(chunks) {
+        // Enhanced metadata structure matching Python ChunkMetadata
+        chunks.forEach((chunk, index) => {
+            const metadata = chunk.metadata;
+            this.metadataStore[index] = {
+                chunkId: chunk.chunk_id,
+                states: metadata.states || [],
+                sections: metadata.sections || [],
+                topics: metadata.topics || [],
+                hasImages: metadata.has_images || false,
+                imageCount: metadata.image_count || 0,
+                wordCount: metadata.word_count || 0,
+                keywords: this.extractKeywords(chunk.text),
+                semanticFingerprint: this.createSemanticFingerprint(chunk.text),
+                textPreview: chunk.text.substring(0, 200)
+            };
+        });
+    }
+    
+    extractKeywords(text) {
+        // Extract important keywords from text
+        const words = this.tokenize(text);
+        const wordFreq = new Map();
+        
+        words.forEach(word => {
+            if (word.length > 3) { // Skip short words
+                wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
             }
         });
         
-        return vocabulary.slice(0, 1000); // Limit vocabulary size
+        return Array.from(wordFreq.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([word]) => word);
     }
     
-    generateTFIDFVector(text, vocabulary) {
-        const words = this.tokenize(text);
-        const wordCounts = new Map();
-        
-        // Count word frequencies in this document
-        words.forEach(word => {
-            wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
-        });
-        
-        // Generate TF-IDF vector
-        const vector = vocabulary.map(word => {
-            const tf = wordCounts.get(word) || 0;
-            const idf = Math.log(this.chunks.length / (this.getDocumentFrequency(word) + 1));
-            return tf * idf;
-        });
-        
-        // Normalize vector
-        const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-        return magnitude > 0 ? vector.map(val => val / magnitude) : vector;
+    createSemanticFingerprint(text) {
+        // Create a simple hash fingerprint
+        let hash = 0;
+        for (let i = 0; i < text.length; i++) {
+            const char = text.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        return hash.toString(36);
     }
     
-    getDocumentFrequency(word) {
-        return this.chunks.filter(chunk => 
-            this.tokenize(chunk.text).includes(word)
-        ).length;
-    }
-    
-    tokenize(text) {
-        return text.toLowerCase()
-            .replace(/[^a-z0-9\\s]/g, ' ')
-            .split(/\\s+/)
-            .filter(word => word.length > 2);
-    }
-    
-    async search(query, options = {}) {
+    async search(query, filters = null, limit = 5) {
         if (!this.isReady) {
-            throw new Error('Vector database not ready. Please process a document first.');
+            console.warn('Vector database not ready');
+            return [];
         }
         
-        const {
-            topK = 5,
-            includeMetadata = true,
-            stateFilter = null,
-            sectionFilter = null,
-            requireImages = false
-        } = options;
+        console.log('🔍 Advanced search for:', query);
         
-        console.log('Searching for:', query, 'with options:', options);
+        // Enhanced query processing - matching Python implementation
+        const enhancedQuery = this.queryIntelligence.enhanceQuery(query);
+        console.log('Enhanced query filters:', enhancedQuery);
         
-        // Extract query components
-        const queryComponents = this.extractQueryComponents(query);
+        // Multi-strategy search
+        const semanticResults = await this.semanticSearch(query, limit * 2);
+        const keywordResults = this.keywordSearch(query, limit * 2);
+        const metadataResults = this.metadataSearch(enhancedQuery, limit * 2);
         
-        // Perform hybrid search (semantic + keyword + metadata)
-        const semanticResults = await this.semanticSearch(query, topK * 2);
-        const keywordResults = this.keywordSearch.search(query, topK * 2);
-        const metadataResults = this.metadataSearch(queryComponents, topK * 2);
+        // Hybrid fusion - matching Python implementation
+        const fusedResults = this.hybridSearch(semanticResults, keywordResults, metadataResults, query);
         
-        // Combine and rank results
-        const combinedResults = this.combineSearchResults(
-            semanticResults,
-            keywordResults,
-            metadataResults,
-            queryComponents
-        );
-        
-        // Apply filters
-        let filteredResults = combinedResults;
-        
-        if (stateFilter) {
-            filteredResults = filteredResults.filter(result => 
-                result.metadata.states?.includes(stateFilter)
-            );
-        }
-        
-        if (sectionFilter) {
-            filteredResults = filteredResults.filter(result =>
-                result.metadata.sections?.includes(sectionFilter)
-            );
-        }
-        
-        if (requireImages) {
-            filteredResults = filteredResults.filter(result =>
-                result.metadata.has_images
-            );
+        // Apply filters if provided
+        let filteredResults = fusedResults;
+        if (filters || enhancedQuery.state || enhancedQuery.orderType || enhancedQuery.topics.length > 0) {
+            const combinedFilters = {
+                ...filters,
+                state: enhancedQuery.state,
+                orderType: enhancedQuery.orderType,
+                topics: enhancedQuery.topics
+            };
+            filteredResults = this.applyAdvancedFilters(fusedResults, combinedFilters);
         }
         
         // Return top results
-        const topResults = filteredResults.slice(0, topK);
+        const results = filteredResults.slice(0, limit);
+        console.log(`📊 Found ${results.length} relevant chunks with hybrid search`);
         
-        // Add search metadata if requested
-        if (includeMetadata) {
-            topResults.forEach(result => {
-                result.searchMetadata = {
-                    queryComponents,
-                    searchTypes: this.identifySearchTypes(result, query)
-                };
+        return results;
+    }
+    
+    async semanticSearch(query, limit) {
+        const queryEmbedding = this.createSimpleEmbedding(query);
+        const similarities = [];
+        
+        for (let i = 0; i < this.semanticIndex.length; i++) {
+            const similarity = this.cosineSimilarity(queryEmbedding, this.semanticIndex[i]);
+            similarities.push({
+                chunkIndex: i,
+                chunk: this.chunks[i],
+                similarity: similarity,
+                score: similarity,
+                source: 'semantic'
             });
         }
         
-        console.log('Search results:', topResults.length);
-        return topResults;
-    }
-    
-    async semanticSearch(query, topK) {
-        // Generate query embedding
-        const queryVector = this.generateTFIDFVector(query, this.buildVocabulary([{text: query}]));
-        
-        // Calculate similarities
-        const similarities = this.embeddings.map((embedding, index) => ({
-            index,
-            score: this.cosineSimilarity(queryVector, embedding),
-            chunk: this.chunks[index],
-            metadata: this.metadata[index],
-            text: this.chunks[index].text,
-            images: this.chunks[index].images || []
-        }));
-        
-        // Sort by similarity and return top results
         return similarities
-            .sort((a, b) => b.score - a.score)
-            .slice(0, topK);
+            .sort((a, b) => b.similarity - a.similarity)
+            .slice(0, limit);
     }
     
-    metadataSearch(queryComponents, topK) {
+    keywordSearch(query, limit) {
+        if (!this.keywordIndex) return [];
+        
+        const queryVector = this.createQueryTFIDF(query, this.keywordIndex.vocabulary);
+        const similarities = [];
+        
+        for (let i = 0; i < this.keywordIndex.vectors.length; i++) {
+            const similarity = this.cosineSimilarity(queryVector, this.keywordIndex.vectors[i]);
+            similarities.push({
+                chunkIndex: i,
+                chunk: this.chunks[i],
+                similarity: similarity,
+                score: similarity,
+                source: 'keyword'
+            });
+        }
+        
+        return similarities
+            .sort((a, b) => b.similarity - a.similarity)
+            .slice(0, limit);
+    }
+    
+    metadataSearch(enhancedQuery, limit) {
         const results = [];
         
-        this.chunks.forEach((chunk, index) => {
-            let score = 0;
+        for (let i = 0; i < this.chunks.length; i++) {
+            const chunk = this.chunks[i];
             const metadata = chunk.metadata;
+            let score = 0;
             
             // State matching
-            if (queryComponents.state && metadata.states?.includes(queryComponents.state)) {
-                score += 0.5;
+            if (enhancedQuery.state && metadata.states && metadata.states.includes(enhancedQuery.state)) {
+                score += 1.0;
             }
             
-            // Order type matching  
-            if (queryComponents.orderType && metadata.sections?.includes(queryComponents.orderType)) {
-                score += 0.3;
+            // Order type matching
+            if (enhancedQuery.orderType && metadata.sections && metadata.sections.includes(enhancedQuery.orderType)) {
+                score += 0.8;
             }
             
             // Topic matching
-            if (queryComponents.topics?.length) {
-                const topicMatches = queryComponents.topics.filter(topic => 
-                    metadata.topics?.includes(topic)
-                ).length;
-                score += topicMatches * 0.2;
+            if (enhancedQuery.topics && enhancedQuery.topics.length > 0 && metadata.topics) {
+                const topicMatches = enhancedQuery.topics.filter(topic => metadata.topics.includes(topic)).length;
+                score += (topicMatches / enhancedQuery.topics.length) * 0.6;
             }
             
             if (score > 0) {
                 results.push({
-                    index,
-                    score,
-                    chunk,
-                    metadata,
-                    text: chunk.text,
-                    images: chunk.images || []
+                    chunkIndex: i,
+                    chunk: chunk,
+                    similarity: score,
+                    score: score,
+                    source: 'metadata'
                 });
             }
-        });
+        }
         
         return results
             .sort((a, b) => b.score - a.score)
-            .slice(0, topK);
+            .slice(0, limit);
     }
     
-    combineSearchResults(semanticResults, keywordResults, metadataResults, queryComponents) {
+    hybridSearch(semanticResults, keywordResults, metadataResults, query) {
+        // Reciprocal Rank Fusion - matching Python implementation
         const resultMap = new Map();
         
         // Add semantic results
-        semanticResults.forEach(result => {
-            const key = result.index;
+        semanticResults.forEach((result, rank) => {
+            const key = result.chunkIndex;
             if (!resultMap.has(key)) {
-                resultMap.set(key, { ...result, searchTypes: [] });
+                resultMap.set(key, {
+                    chunkIndex: result.chunkIndex,
+                    chunk: result.chunk,
+                    scores: { semantic: 0, keyword: 0, metadata: 0 },
+                    ranks: { semantic: Infinity, keyword: Infinity, metadata: Infinity }
+                });
             }
-            resultMap.get(key).searchTypes.push('semantic');
+            const item = resultMap.get(key);
+            item.scores.semantic = result.similarity;
+            item.ranks.semantic = rank + 1;
         });
         
         // Add keyword results
-        keywordResults.forEach(result => {
-            const key = result.index;
-            if (resultMap.has(key)) {
-                const existing = resultMap.get(key);
-                existing.score = Math.max(existing.score, result.score * 0.8);
-                existing.searchTypes.push('keyword');
-            } else {
-                resultMap.set(key, { 
-                    ...result, 
-                    score: result.score * 0.8,
-                    searchTypes: ['keyword']
+        keywordResults.forEach((result, rank) => {
+            const key = result.chunkIndex;
+            if (!resultMap.has(key)) {
+                resultMap.set(key, {
+                    chunkIndex: result.chunkIndex,
+                    chunk: result.chunk,
+                    scores: { semantic: 0, keyword: 0, metadata: 0 },
+                    ranks: { semantic: Infinity, keyword: Infinity, metadata: Infinity }
                 });
             }
+            const item = resultMap.get(key);
+            item.scores.keyword = result.similarity;
+            item.ranks.keyword = rank + 1;
         });
         
         // Add metadata results
-        metadataResults.forEach(result => {
-            const key = result.index;
-            if (resultMap.has(key)) {
-                const existing = resultMap.get(key);
-                existing.score += result.score * 0.6;
-                existing.searchTypes.push('metadata');
-            } else {
-                resultMap.set(key, { 
-                    ...result, 
-                    score: result.score * 0.6,
-                    searchTypes: ['metadata']
+        metadataResults.forEach((result, rank) => {
+            const key = result.chunkIndex;
+            if (!resultMap.has(key)) {
+                resultMap.set(key, {
+                    chunkIndex: result.chunkIndex,
+                    chunk: result.chunk,
+                    scores: { semantic: 0, keyword: 0, metadata: 0 },
+                    ranks: { semantic: Infinity, keyword: Infinity, metadata: Infinity }
                 });
+            }
+            const item = resultMap.get(key);
+            item.scores.metadata = result.similarity;
+            item.ranks.metadata = rank + 1;
+        });
+        
+        // Calculate RRF scores
+        const k = 60; // RRF parameter
+        const results = Array.from(resultMap.values()).map(item => {
+            const rrfScore = 
+                1 / (k + item.ranks.semantic) +
+                1 / (k + item.ranks.keyword) +
+                1 / (k + item.ranks.metadata);
+            
+            return {
+                chunk: item.chunk,
+                similarity: rrfScore,
+                relevance_score: Math.round(rrfScore * 100) / 100,
+                scores: item.scores,
+                ranks: item.ranks
+            };
+        });
+        
+        return results.sort((a, b) => b.similarity - a.similarity);
+    }
+    
+    applyAdvancedFilters(results, filters) {
+        return results.filter(result => {
+            const metadata = result.chunk.metadata || {};
+            
+            // State filter
+            if (filters.state && metadata.states) {
+                if (!metadata.states.includes(filters.state)) {
+                    return false;
+                }
+            }
+            
+            // Order type filter
+            if (filters.orderType && metadata.sections) {
+                if (!metadata.sections.includes(filters.orderType)) {
+                    return false;
+                }
+            }
+            
+            // Topic filter
+            if (filters.topics && filters.topics.length > 0 && metadata.topics) {
+                if (!filters.topics.some(topic => metadata.topics.includes(topic))) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+    
+    createQueryTFIDF(query, vocabulary) {
+        const queryWords = this.tokenize(query);
+        const vector = new Array(vocabulary.size).fill(0);
+        
+        queryWords.forEach(word => {
+            if (vocabulary.has(word)) {
+                const index = vocabulary.get(word);
+                vector[index] += 1;
             }
         });
         
-        // Convert to array and sort
-        return Array.from(resultMap.values())
-            .sort((a, b) => b.score - a.score);
+        return vector;
     }
     
-    extractQueryComponents(query) {
-        const queryLower = query.toLowerCase();
-        
-        // State extraction
-        const statePatterns = {
-            'OH': ['ohio', 'oh'],
-            'MD': ['maryland', 'md'],
-            'NJ': ['new jersey', 'nj', 'jersey'],
-            'IL': ['illinois', 'il'],
-            'NY': ['new york', 'ny'],
-            'NV': ['nevada', 'nv'],
-            'MA': ['massachusetts', 'ma']
-        };
-        
-        let detectedState = null;
-        for (const [state, patterns] of Object.entries(statePatterns)) {
-            if (patterns.some(pattern => queryLower.includes(pattern))) {
-                detectedState = state;
-                break;
-            }
-        }
-        
-        // Order type extraction
-        let orderType = null;
-        if (queryLower.includes('rise') || queryLower.includes('internal')) {
-            orderType = 'RISE';
-        } else if (queryLower.includes('regular') || queryLower.includes('wholesale')) {
-            orderType = 'REGULAR';
-        }
-        
-        // Topic extraction
-        const topicPatterns = {
-            'PRICING': ['price', 'pricing', 'cost', 'discount', 'menu'],
-            'BATTERIES': ['battery', 'batteries', 'separate', 'invoice'],
-            'BATCH_SUB': ['batch', 'sub', 'substitution', 'fifo'],
-            'DELIVERY_DATE': ['delivery', 'date', 'schedule'],
-            'ORDER_LIMIT': ['limit', 'maximum', 'max', 'unit']
-        };
-        
-        const detectedTopics = [];
-        for (const [topic, patterns] of Object.entries(topicPatterns)) {
-            if (patterns.some(pattern => queryLower.includes(pattern))) {
-                detectedTopics.push(topic);
-            }
-        }
-        
-        return {
-            state: detectedState,
-            orderType,
-            topics: detectedTopics,
-            requiresImages: queryLower.includes('image') || queryLower.includes('show') || queryLower.includes('example')
-        };
-    }
-    
-    identifySearchTypes(result, query) {
-        const types = result.searchTypes || [];
-        
-        // Add specific search type identifiers
-        if (result.metadata.has_images && query.toLowerCase().includes('image')) {
-            types.push('image');
-        }
-        
-        if (result.metadata.states?.length) {
-            types.push('state-specific');
-        }
-        
-        return types;
+    tokenize(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(word => word.length > 2);
     }
     
     cosineSimilarity(vecA, vecB) {
-        if (vecA.length !== vecB.length) return 0;
-        
         let dotProduct = 0;
         let normA = 0;
         let normB = 0;
@@ -376,113 +518,110 @@ class VectorDatabase {
             normB += vecB[i] * vecB[i];
         }
         
-        normA = Math.sqrt(normA);
-        normB = Math.sqrt(normB);
-        
-        if (normA === 0 || normB === 0) return 0;
-        
-        return dotProduct / (normA * normB);
-    }
-    
-    async loadFromStorage(chunks, vectorDbData) {
-        try {
-            this.chunks = chunks;
-            this.metadata = chunks.map(chunk => chunk.metadata);
-            
-            if (vectorDbData && vectorDbData.embeddings) {
-                this.embeddings = vectorDbData.embeddings;
-            } else {
-                // Rebuild embeddings
-                this.embeddings = await this.generateSimpleEmbeddings(chunks);
-            }
-            
-            this.keywordSearch.buildIndex(chunks);
-            this.isReady = true;
-            
-            console.log('Vector database loaded from storage');
-            return true;
-        } catch (error) {
-            console.error('Failed to load vector database from storage:', error);
-            return false;
+        if (normA === 0 || normB === 0) {
+            return 0;
         }
+        
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
     
-    exportData() {
+    printBuildStatistics(chunks, embeddings) {
+        console.log('📊 Vector Database Statistics:');
+        console.log(`  Total chunks: ${chunks.length}`);
+        console.log(`  Semantic embeddings: ${embeddings.length}`);
+        console.log(`  Keyword vocabulary size: ${this.keywordIndex?.vocabulary.size || 0}`);
+        console.log(`  Chunks with images: ${this.imageIndex?.length || 0}`);
+        
+        // State distribution
+        const stateCount = {};
+        chunks.forEach(chunk => {
+            (chunk.metadata.states || []).forEach(state => {
+                stateCount[state] = (stateCount[state] || 0) + 1;
+            });
+        });
+        console.log('  State distribution:', stateCount);
+    }
+    
+    async loadFromStorage(chunks, metadata) {
+        console.log('Loading advanced vector database from storage...');
+        await this.buildFromChunks(chunks);
+        console.log('Advanced vector database loaded successfully');
+    }
+    
+    getStats() {
         return {
-            chunks: this.chunks,
-            embeddings: this.embeddings,
-            metadata: this.metadata,
+            totalChunks: this.chunks.length,
+            vocabularySize: this.keywordIndex?.vocabulary.size || 0,
+            imageChunks: this.imageIndex?.length || 0,
             isReady: this.isReady
         };
     }
 }
 
-/**
- * Keyword Search - Simple text-based search as fallback
- */
-class KeywordSearch {
+// Improved Query Intelligence - matching Python implementation
+class ImprovedQueryIntelligence {
     constructor() {
-        this.index = new Map();
-        this.chunks = [];
+        this.statePattern = /\b([A-Z]{2})\b/g;
+        this.orderTypeKeywords = {
+            "RISE": ["rise", "internal"],
+            "REGULAR": ["regular", "wholesale"]
+        };
+        this.topicKeywords = {
+            "PRICING": ["price", "pricing", "discount", "menu"],
+            "BATTERIES": ["battery", "batteries", "invoice", "separate"],
+            "ORDER_LIMITS": ["limit", "unit", "max", "split", "minimum", "maximum"],
+            "BATCH_SUB": ["batch", "sub", "fifo", "substitution", "replace"],
+            "DELIVERY": ["delivery", "schedule", "date"],
+            "NOTES": ["note", "comment", "required", "mention"],
+            "FORMS": ["form", "example", "template"],
+            "IMAGES": ["image", "visual", "see", "picture", "show"]
+        };
+        
+        this.US_STATE_ABBREVIATIONS = new Set([
+            'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID',
+            'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS',
+            'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK',
+            'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV',
+            'WI', 'WY'
+        ]);
     }
     
-    buildIndex(chunks) {
-        this.chunks = chunks;
-        this.index.clear();
+    enhanceQuery(query) {
+        const queryLower = query.toLowerCase();
         
-        chunks.forEach((chunk, chunkIndex) => {
-            const words = this.tokenize(chunk.text);
-            
-            words.forEach(word => {
-                if (!this.index.has(word)) {
-                    this.index.set(word, []);
-                }
-                this.index.get(word).push({
-                    chunkIndex,
-                    frequency: words.filter(w => w === word).length
-                });
-            });
-        });
-    }
-    
-    search(query, topK = 5) {
-        const queryWords = this.tokenize(query);
-        const scores = new Map();
+        // State extraction
+        const states = [...query.matchAll(this.statePattern)].map(match => match[1]);
+        const state = states.find(s => this.US_STATE_ABBREVIATIONS.has(s)) || null;
         
-        queryWords.forEach(word => {
-            const postings = this.index.get(word) || [];
-            
-            postings.forEach(posting => {
-                const currentScore = scores.get(posting.chunkIndex) || 0;
-                scores.set(posting.chunkIndex, currentScore + posting.frequency);
-            });
-        });
+        // Order type
+        let orderType = null;
+        for (const [key, synonyms] of Object.entries(this.orderTypeKeywords)) {
+            if (synonyms.some(word => queryLower.includes(word))) {
+                orderType = key;
+                break;
+            }
+        }
         
-        // Convert to array and sort
-        const results = Array.from(scores.entries())
-            .map(([index, score]) => ({
-                index: parseInt(index),
-                score: score / queryWords.length, // Normalize by query length
-                chunk: this.chunks[index],
-                metadata: this.chunks[index].metadata,
-                text: this.chunks[index].text,
-                images: this.chunks[index].images || []
-            }))
-            .sort((a, b) => b.score - a.score)
-            .slice(0, topK);
+        // Topics
+        const detectedTopics = [];
+        for (const [topic, keywords] of Object.entries(this.topicKeywords)) {
+            if (keywords.some(word => queryLower.includes(word))) {
+                detectedTopics.push(topic);
+            }
+        }
         
-        return results;
-    }
-    
-    tokenize(text) {
-        return text.toLowerCase()
-            .replace(/[^a-z0-9\\s]/g, ' ')
-            .split(/\\s+/)
-            .filter(word => word.length > 2);
+        return {
+            state: state,
+            orderType: orderType,
+            topics: detectedTopics
+        };
     }
 }
 
+// Use the Advanced Vector Database as the main VectorDatabase class
+class VectorDatabase extends AdvancedVectorDatabase {}
+
 // Export for module use
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { VectorDatabase, KeywordSearch };
+    module.exports = VectorDatabase;
 }
