@@ -258,12 +258,18 @@ class GlobalConfig {
                 showSuggestedQuestions: true,
                 showChunkRelevance: true
             },
-            instructions: 'You are a GTI SOP Assistant. Answer based ONLY on the provided documentation. Be specific about states and order types (RISE/Regular).',
+            github: {
+                repo: 'FadeevMax/SOP3.0_vercel',
+                token: '' // Will be configured via environment variables
+            },
             googleDocs: {
+                docId: '1BXxlyLsOL6hsVWLXB84p35yRg9yr7AL9fzz4yjVQJgA',
+                docName: 'GTI Data Base and SOP',
                 enabled: true,
                 autoSync: true,
                 syncInterval: 300000 // 5 minutes
             },
+            instructions: 'You are a GTI SOP Assistant. Answer based ONLY on the provided documentation. Be specific about states and order types (RISE/Regular).',
             lastUpdate: new Date().toISOString()
         };
     }

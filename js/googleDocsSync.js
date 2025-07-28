@@ -4,7 +4,8 @@
 
 class GoogleDocsSync {
     constructor() {
-        this.documentId = '1YourGoogleDocumentIdHere'; // Replace with your actual Google Docs ID
+        this.documentId = '1BXxlyLsOL6hsVWLXB84p35yRg9yr7AL9fzz4yjVQJgA'; // GTI Data Base and SOP
+        this.documentName = 'GTI Data Base and SOP';
         this.serviceAccountCredentials = null;
         this.lastSyncTime = null;
     }

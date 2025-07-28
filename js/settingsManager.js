@@ -25,7 +25,8 @@ class SettingsManager {
             },
             googleDocs: {
                 serviceAccount: null,
-                docId: '',
+                docId: '1BXxlyLsOL6hsVWLXB84p35yRg9yr7AL9fzz4yjVQJgA',
+                docName: 'GTI Data Base and SOP',
                 enabled: true,
                 autoSync: true
             },
