@@ -22,9 +22,12 @@ export default function handler(req, res) {
         // Debug logging for environment variables
         console.log('🔍 Environment variables check:');
         console.log('GOOGLE_CLIENT_EMAIL present:', !!process.env.GOOGLE_CLIENT_EMAIL);
+        console.log('GOOGLE_CLIENT_EMAIL actual value:', process.env.GOOGLE_CLIENT_EMAIL);
+        console.log('GOOGLE_CLIENT_EMAIL length:', process.env.GOOGLE_CLIENT_EMAIL ? process.env.GOOGLE_CLIENT_EMAIL.length : 0);
         console.log('GOOGLE_PRIVATE_KEY present:', !!process.env.GOOGLE_PRIVATE_KEY);
+        console.log('GOOGLE_PRIVATE_KEY length:', process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.length : 0);
         console.log('GOOGLE_PROJECT_ID present:', !!process.env.GOOGLE_PROJECT_ID);
-        console.log('GOOGLE_CLIENT_EMAIL value:', process.env.GOOGLE_CLIENT_EMAIL ? process.env.GOOGLE_CLIENT_EMAIL.substring(0, 20) + '...' : 'undefined');
+        console.log('GOOGLE_PROJECT_ID value:', process.env.GOOGLE_PROJECT_ID);
         
         if (process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY) {
             googleServiceAccount = {
