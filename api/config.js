@@ -15,20 +15,39 @@ export default function handler(req, res) {
         return;
     }
     
-    // Return configuration (only non-sensitive parts)
-    const config = {
-        GITHUB_REPO: process.env.GITHUB_REPO || 'FadeevMax/SOP3.0_vercel',
+    try {
+        // Return configuration with API keys for client use
+        const config = {
+            apiKeys: {
+                openai: process.env.OPENAI_API_KEY || '',
+                gemini: process.env.GEMINI_API_KEY || '',
+                githubToken: process.env.GITHUB_TOKEN || ''
+            },
+            googleServiceAccount: process.env.GOOGLE_SERVICE_ACCOUNT ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT) : null,
+            github: {
+                repo: 'FadeevMax/SOP3.0_vercel'
+            },
+            googleDocs: {
+                docId: '1BXxlyLsOL6hsVWLXB84p35yRg9yr7AL9fzz4yjVQJgA',
+                docName: 'GTI Data Base and SOP'
+            },
+            app: {
+                version: '1.0.0',
+                environment: process.env.NODE_ENV || 'production'
+            }
+        };
         
-        // Don't expose API keys directly - they'll be handled client-side
-        // These are just flags to indicate if keys are configured
-        HAS_OPENAI_KEY: !!process.env.OPENAI_API_KEY,
-        HAS_GEMINI_KEY: !!process.env.GEMINI_API_KEY,
-        HAS_GITHUB_TOKEN: !!process.env.GITHUB_TOKEN,
+        // Set no-cache headers
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         
-        // App configuration
-        APP_VERSION: '1.0.0',
-        ENVIRONMENT: process.env.NODE_ENV || 'production'
-    };
-    
-    res.status(200).json(config);
+        res.status(200).json(config);
+    } catch (error) {
+        console.error('Config API error:', error);
+        res.status(500).json({ 
+            error: 'Failed to load configuration',
+            details: error.message 
+        });
+    }
 }

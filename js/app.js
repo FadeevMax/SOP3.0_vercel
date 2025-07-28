@@ -47,13 +47,41 @@ class GTISOPAssistant {
     
     async initializeModules() {
         try {
-            // Initialize global config first
+            // Load configuration from Vercel environment variables
+            const configResponse = await fetch('/api/config');
+            if (configResponse.ok) {
+                const serverConfig = await configResponse.json();
+                console.log('✓ Server configuration loaded');
+                
+                // Merge server config with default settings
+                this.state.globalSettings = {
+                    apiKeys: serverConfig.apiKeys,
+                    model: 'gemini-2.0',
+                    temperature: 0.1,
+                    displayOptions: {
+                        showSuggestedQuestions: true,
+                        showChunkRelevance: true
+                    },
+                    github: serverConfig.github,
+                    googleDocs: serverConfig.googleDocs,
+                    instructions: 'You are a GTI SOP Assistant. Answer based ONLY on the provided documentation. Be specific about states and order types (RISE/Regular).'
+                };
+            } else {
+                console.warn('Failed to load server config, using defaults');
+                this.state.globalSettings = {
+                    apiKeys: { openai: '', gemini: '', githubToken: '' },
+                    model: 'gemini-2.0',
+                    temperature: 0.1,
+                    displayOptions: { showSuggestedQuestions: true, showChunkRelevance: true },
+                    github: { repo: 'FadeevMax/SOP3.0_vercel' },
+                    googleDocs: { docId: '1BXxlyLsOL6hsVWLXB84p35yRg9yr7AL9fzz4yjVQJgA', docName: 'GTI Data Base and SOP' },
+                    instructions: 'You are a GTI SOP Assistant. Answer based ONLY on the provided documentation. Be specific about states and order types (RISE/Regular).'
+                };
+            }
+            
+            // Initialize global config
             this.globalConfig = new GlobalConfig();
             console.log('✓ Global config initialized');
-            
-            // Load global settings
-            this.state.globalSettings = await this.globalConfig.loadGlobalSettings();
-            console.log('✓ Global settings loaded');
             
             // Initialize settings manager with global settings
             this.settingsManager = new SettingsManager(this);
@@ -186,8 +214,14 @@ class GTISOPAssistant {
                 return;
             }
             
-            // If no data exists, try to sync from Google Docs
-            await this.syncFromGoogleDocs();
+            // If no data exists, try to sync from Google Docs or use fallback
+            const syncResult = await this.syncFromGoogleDocs();
+            if (syncResult && syncResult.success && syncResult.chunks) {
+                await this.vectorDatabase.loadFromStorage(syncResult.chunks, null);
+                this.state.documentsLoaded = true;
+                this.state.vectorDbReady = true;
+                console.log(`✓ Loaded ${syncResult.chunks.length} chunks from ${syncResult.metadata?.source || 'sync'}`);
+            }
         } catch (error) {
             console.warn('Failed to load global data:', error);
         }
