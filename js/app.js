@@ -46,32 +46,49 @@ class GTISOPAssistant {
     }
     
     async initializeModules() {
-        // Initialize global config first
-        this.globalConfig = new GlobalConfig();
-        
-        // Load global settings
-        this.state.globalSettings = await this.globalConfig.loadGlobalSettings();
-        
-        // Initialize settings manager with global settings
-        this.settingsManager = new SettingsManager(this);
-        
-        // Initialize document processor
-        this.documentProcessor = new DocumentProcessor(this);
-        
-        // Initialize vector database
-        this.vectorDatabase = new VectorDatabase(this);
-        
-        // Initialize chat interface
-        this.chatInterface = new ChatInterface(this);
-        
-        // Initialize GitHub integration
-        this.githubIntegration = new GitHubIntegration(this);
-        
-        // Initialize Google Docs sync
-        this.googleDocsSync = new GoogleDocsSync();
-        
-        // Load global data first, then fallback to local data
-        await this.loadGlobalData();
+        try {
+            // Initialize global config first
+            this.globalConfig = new GlobalConfig();
+            console.log('✓ Global config initialized');
+            
+            // Load global settings
+            this.state.globalSettings = await this.globalConfig.loadGlobalSettings();
+            console.log('✓ Global settings loaded');
+            
+            // Initialize settings manager with global settings
+            this.settingsManager = new SettingsManager(this);
+            console.log('✓ Settings manager initialized');
+            
+            // Initialize document processor
+            this.documentProcessor = new DocumentProcessor(this);
+            console.log('✓ Document processor initialized');
+            
+            // Initialize vector database
+            this.vectorDatabase = new VectorDatabase(this);
+            console.log('✓ Vector database initialized');
+            
+            // Initialize chat interface
+            this.chatInterface = new ChatInterface(this);
+            console.log('✓ Chat interface initialized');
+            
+            // Initialize GitHub integration
+            this.githubIntegration = new GitHubIntegration(this);
+            console.log('✓ GitHub integration initialized');
+            
+            // Initialize Google Docs sync with error checking
+            if (typeof GoogleDocsSync === 'undefined') {
+                throw new Error('GoogleDocsSync class not found - check script loading');
+            }
+            this.googleDocsSync = new GoogleDocsSync();
+            console.log('✓ Google Docs sync initialized');
+            
+            // Load global data first, then fallback to local data
+            await this.loadGlobalData();
+            console.log('✓ Global data loading completed');
+        } catch (error) {
+            console.error('Module initialization failed:', error);
+            throw error;
+        }
     }
     
     setupEventListeners() {
@@ -172,6 +189,15 @@ class GTISOPAssistant {
     async syncFromGoogleDocs() {
         try {
             console.log('Attempting Google Docs sync...');
+            
+            // Check if googleDocsSync is properly initialized
+            if (!this.googleDocsSync) {
+                throw new Error('Google Docs sync not initialized');
+            }
+            
+            if (typeof this.googleDocsSync.syncFromGoogleDocs !== 'function') {
+                throw new Error('Google Docs sync method not available');
+            }
             
             // Use the real Google Docs sync
             const result = await this.googleDocsSync.syncFromGoogleDocs();
