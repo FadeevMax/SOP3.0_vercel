@@ -100,208 +100,92 @@ class GoogleDocsSync {
                 throw new Error('Google service account credentials not configured');
             }
             
-            // Step 1: Try authenticated download first, then fallback to direct download
-            if (showProgress) {
-                console.log('📥 Step 1: Downloading DOCX from Google Docs (authenticated)...');
-            }
+            // Try multiple download methods in sequence
+            const downloadMethods = [
+                { name: 'authenticated', endpoint: '/api/download-gdocs-authenticated' },
+                { name: 'direct', endpoint: '/api/download-gdocs-docx' },
+                { name: 'github', endpoint: '/api/download-from-github' },
+                { name: 'local', endpoint: '/api/process-local-docx' }
+            ];
             
-            let response;
-            try {
-                // First, try the authenticated download (like Python code)
-                response = await fetch('/api/download-gdocs-authenticated', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        documentId: docId,
-                        documentName: this.documentName
-                    })
-                });
-                
-                if (!response.ok) {
-                    console.log('🔄 Authenticated download failed, trying direct download...');
-                    
-                    // Fallback to direct download
-                    response = await fetch('/api/download-gdocs-docx', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            documentId: docId,
-                            documentName: this.documentName
-                        })
-                    });
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`DOCX download failed: ${response.status}`);
-                }
-                
-                const downloadResult = await response.json();
-                
-                if (showProgress) {
-                    console.log('✅ Step 1 complete: DOCX downloaded successfully');
-                    console.log('🔄 Step 2: Processing DOCX with semantic chunking...');
-                }
-                
-                if (downloadResult.success && downloadResult.docx) {
-                    // Process the DOCX data with full semantic chunking
-                    response = await fetch('/api/process-docx-full', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            docxData: downloadResult.docx.data,
-                            documentId: docId,
-                            documentName: downloadResult.document.name
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error('DOCX processing failed');
-                    }
-                    
-                    const processResult = await response.json();
-                    
-                    if (showProgress) {
-                        console.log('✅ Step 2 complete: DOCX processed into semantic chunks');
-                        console.log(`📊 Generated ${processResult.chunks?.length || 0} chunks`);
-                    }
-                    
-                    // Add download URL to the result
-                    if (downloadResult.document.downloadUrl) {
-                        processResult.downloadUrl = downloadResult.document.downloadUrl;
-                    }
-                    
-                    return processResult;
-                    
-                } else if (downloadResult.success && downloadResult.chunks) {
-                    // If we got existing processed data as fallback
-                    if (showProgress) {
-                        console.log('📋 Using existing processed data (fallback)');
-                    }
-                    return downloadResult;
-                }
-                
-                throw new Error('No valid data received from download');
-                
-            } catch (error) {
-                console.log('❌ Both download methods failed, trying GitHub repository...');
-                console.log('Error:', error.message);
-                
-                if (showProgress) {
-                    console.log('🔄 Step 3: Trying GitHub repository download...');
-                }
+            for (let i = 0; i < downloadMethods.length; i++) {
+                const method = downloadMethods[i];
                 
                 try {
-                    // Try GitHub repository download
-                    response = await fetch('/api/download-from-github', {
+                    if (showProgress) {
+                        console.log(`📥 Step ${i + 1}: Trying ${method.name} download...`);
+                    }
+                    
+                    const response = await fetch(method.endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
                             documentId: docId,
-                            documentName: this.documentName
+                            documentName: this.documentName,
+                            credentials: credentials
                         })
                     });
                     
                     if (response.ok) {
-                        const githubResult = await response.json();
+                        const result = await response.json();
                         
-                        if (showProgress) {
-                            console.log('✅ Step 3 complete: Downloaded from GitHub');
-                            if (githubResult.chunks) {
-                                console.log(`📊 Using pre-processed ${githubResult.chunks.length} chunks`);
-                                return githubResult;
-                            } else {
-                                console.log('🔄 Step 4: Processing GitHub DOCX...');
+                        if (result.success) {
+                            if (showProgress) {
+                                console.log(`✅ Step ${i + 1} successful: ${method.name} download completed`);
                             }
-                        }
-                        
-                        // If we got processed chunks from GitHub, use them
-                        if (githubResult.success && githubResult.chunks) {
-                            return githubResult;
-                        }
-                        
-                        // If we got DOCX from GitHub, process it
-                        if (githubResult.success && githubResult.docx) {
-                            response = await fetch('/api/process-docx-full', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    docxData: githubResult.docx.data,
-                                    documentId: docId,
-                                    documentName: githubResult.document.name
-                                })
-                            });
                             
-                            if (response.ok) {
-                                const processResult = await response.json();
-                                if (githubResult.document.downloadUrl) {
-                                    processResult.downloadUrl = githubResult.document.downloadUrl;
+                            // If we got chunks directly, return them
+                            if (result.chunks) {
+                                if (result.downloadUrl) {
+                                    result.downloadUrl = result.downloadUrl;
                                 }
-                                return processResult;
+                                return result;
+                            }
+                            
+                            // If we got DOCX data, process it
+                            if (result.docx) {
+                                if (showProgress) {
+                                    console.log('🔄 Processing DOCX with semantic chunking...');
+                                }
+                                
+                                const processResponse = await fetch('/api/process-docx-full', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        docxData: result.docx.data,
+                                        documentId: docId,
+                                        documentName: result.document?.name || this.documentName
+                                    })
+                                });
+                                
+                                if (processResponse.ok) {
+                                    const processResult = await processResponse.json();
+                                    if (result.document?.downloadUrl) {
+                                        processResult.downloadUrl = result.document.downloadUrl;
+                                    }
+                                    
+                                    if (showProgress) {
+                                        console.log(`📊 Generated ${processResult.chunks?.length || 0} chunks`);
+                                    }
+                                    
+                                    return processResult;
+                                }
                             }
                         }
                     }
-                } catch (githubError) {
-                    console.log('❌ GitHub download also failed:', githubError.message);
+                    
+                } catch (methodError) {
+                    console.log(`❌ ${method.name} download failed:`, methodError.message);
+                    continue; // Try next method
                 }
-                
-                // Final fallback to local processing
-                console.log('🔄 Final fallback: Using local processed data...');
-                response = await fetch('/api/process-local-docx', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    documentId: docId,
-                    credentials: credentials
-                })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
             }
             
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.error || 'Unknown error occurred');
-            }
-            
-            console.log('Successfully synced document:', result.document.name);
-            
-            // Convert base64 DOCX data back to binary
-            const docxBinary = this.base64ToArrayBuffer(result.docx.data);
-            
-            // Process the DOCX content
-            const processedData = await this.processDocxContent(docxBinary, result.document.name);
-            
-            // Update last sync time
-            this.lastSyncTime = new Date().toISOString();
-            localStorage.setItem('last_google_docs_sync', this.lastSyncTime);
-            
-            return {
-                success: true,
-                document: result.document,
-                chunks: processedData.chunks,
-                images: processedData.images,
-                metadata: {
-                    ...processedData.metadata,
-                    syncTime: this.lastSyncTime,
-                    source: 'google_docs',
-                    documentId: docId
-                }
-            };
+            // If all methods failed, throw error
+            throw new Error('All download methods failed');
             
         } catch (error) {
             console.error('Google Docs sync failed:', error);
