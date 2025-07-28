@@ -118,6 +118,29 @@ class SettingsManager {
             this.settings.github.token = e.target.value;
             this.saveSettings();
         });
+
+        // System instructions
+        document.getElementById('systemInstructions')?.addEventListener('input', (e) => {
+            this.settings.instructions = e.target.value;
+            this.saveSettings();
+        });
+
+        // Data management buttons
+        document.getElementById('viewJsonBtn')?.addEventListener('click', () => {
+            this.viewJsonData();
+        });
+
+        document.getElementById('viewVectorDbBtn')?.addEventListener('click', () => {
+            this.viewVectorDatabase();
+        });
+
+        document.getElementById('exportDataBtn')?.addEventListener('click', () => {
+            this.exportAllData();
+        });
+
+        document.getElementById('clearDataBtn')?.addEventListener('click', () => {
+            this.clearAllData();
+        });
     }
     
     async handleDocumentUpload(file) {
@@ -229,6 +252,12 @@ class SettingsManager {
         
         if (githubRepo) githubRepo.value = this.settings.github.repo;
         if (githubToken) githubToken.value = this.settings.github.token;
+
+        // Apply system instructions
+        const systemInstructions = document.getElementById('systemInstructions');
+        if (systemInstructions) {
+            systemInstructions.value = this.settings.instructions || 'You are a GTI SOP Assistant. Answer based ONLY on the provided documentation. Be specific about states and order types (RISE/Regular).';
+        }
         
         // Update display
         this.updateDisplayOptions();
@@ -374,6 +403,157 @@ class SettingsManager {
             
             this.applySettings();
             this.app.showSuccess('Settings reset to defaults');
+        }
+    }
+
+    // Data management methods
+    viewJsonData() {
+        try {
+            const chunks = localStorage.getItem('gti_chunks') || '[]';
+            const parsedChunks = JSON.parse(chunks);
+            
+            const jsonWindow = window.open('', '_blank');
+            jsonWindow.document.write(`
+                <html>
+                    <head>
+                        <title>GTI SOP - JSON Data</title>
+                        <style>
+                            body { font-family: monospace; padding: 20px; background: #1f2937; color: #ffffff; }
+                            pre { white-space: pre-wrap; word-wrap: break-word; }
+                            .stats { background: #374151; padding: 10px; margin-bottom: 20px; border-radius: 8px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="stats">
+                            <h2>📊 Data Statistics</h2>
+                            <p>Total Chunks: ${parsedChunks.length}</p>
+                            <p>Total Images: ${parsedChunks.reduce((sum, chunk) => sum + (chunk.images?.length || 0), 0)}</p>
+                            <p>Last Updated: ${localStorage.getItem('gti_last_update') || 'Never'}</p>
+                        </div>
+                        <h2>📄 JSON Data</h2>
+                        <pre>${JSON.stringify(parsedChunks, null, 2)}</pre>
+                    </body>
+                </html>
+            `);
+        } catch (error) {
+            this.app.showError('Failed to view JSON data: ' + error.message);
+        }
+    }
+
+    viewVectorDatabase() {
+        try {
+            if (!this.app.vectorDatabase || !this.app.vectorDatabase.chunks) {
+                this.app.showError('Vector database not initialized');
+                return;
+            }
+
+            const stats = this.app.vectorDatabase.getStats();
+            const chunks = this.app.vectorDatabase.chunks;
+            
+            const dbWindow = window.open('', '_blank');
+            dbWindow.document.write(`
+                <html>
+                    <head>
+                        <title>GTI SOP - Vector Database</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; background: #1f2937; color: #ffffff; }
+                            .stats { background: #374151; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+                            .chunk { background: #374151; padding: 15px; margin-bottom: 15px; border-radius: 8px; }
+                            .metadata { background: #4b5563; padding: 10px; border-radius: 6px; margin-top: 10px; }
+                            .tag { background: #60a5fa; color: white; padding: 2px 8px; border-radius: 4px; margin: 2px; display: inline-block; font-size: 12px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="stats">
+                            <h2>🗄️ Vector Database Statistics</h2>
+                            <p>Total Chunks: ${stats.totalChunks}</p>
+                            <p>Vocabulary Size: ${stats.vocabularySize}</p>
+                            <p>Image Chunks: ${stats.imageChunks}</p>
+                            <p>Status: ${stats.isReady ? '✅ Ready' : '❌ Not Ready'}</p>
+                        </div>
+                        <h2>📚 Chunks</h2>
+                        ${chunks.map((chunk, index) => `
+                            <div class="chunk">
+                                <h3>Chunk ${index + 1} (ID: ${chunk.chunk_id})</h3>
+                                <p>${chunk.text}</p>
+                                <div class="metadata">
+                                    <strong>Metadata:</strong><br>
+                                    ${chunk.metadata.states ? chunk.metadata.states.map(s => `<span class="tag">${s}</span>`).join('') : ''}
+                                    ${chunk.metadata.sections ? chunk.metadata.sections.map(s => `<span class="tag">${s}</span>`).join('') : ''}
+                                    ${chunk.metadata.topics ? chunk.metadata.topics.map(t => `<span class="tag">${t}</span>`).join('') : ''}
+                                    <br>Images: ${chunk.images?.length || 0} | Words: ${chunk.metadata.word_count || 0}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </body>
+                </html>
+            `);
+        } catch (error) {
+            this.app.showError('Failed to view vector database: ' + error.message);
+        }
+    }
+
+    exportAllData() {
+        try {
+            const exportData = {
+                chunks: JSON.parse(localStorage.getItem('gti_chunks') || '[]'),
+                settings: this.settings,
+                metadata: {
+                    exportDate: new Date().toISOString(),
+                    version: '1.0',
+                    lastUpdate: localStorage.getItem('gti_last_update')
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gti-sop-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            this.app.showSuccess('Data exported successfully');
+        } catch (error) {
+            this.app.showError('Failed to export data: ' + error.message);
+        }
+    }
+
+    clearAllData() {
+        if (confirm('Are you sure you want to clear ALL data? This will remove chunks, vector database, and chat history. This cannot be undone.')) {
+            try {
+                // Clear localStorage
+                localStorage.removeItem('gti_chunks');
+                localStorage.removeItem('gti_last_update');
+                localStorage.removeItem('gti_chat_history');
+                localStorage.removeItem('gti_processed_chunks');
+                localStorage.removeItem('gti_processed_images');
+                
+                // Reset application state
+                this.app.state.documentsLoaded = false;
+                this.app.state.vectorDbReady = false;
+                
+                // Clear vector database
+                if (this.app.vectorDatabase) {
+                    this.app.vectorDatabase.chunks = [];
+                    this.app.vectorDatabase.isReady = false;
+                }
+                
+                // Clear chat interface
+                if (this.app.chatInterface) {
+                    this.app.chatInterface.clearChat();
+                }
+                
+                // Update UI
+                this.app.updateUI();
+                
+                this.app.showSuccess('All data cleared successfully');
+            } catch (error) {
+                this.app.showError('Failed to clear data: ' + error.message);
+            }
         }
     }
 }
